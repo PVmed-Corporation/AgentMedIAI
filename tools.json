@@ -1,0 +1,14 @@
+{
+    "segmentation":{
+        "task":"segmentation",
+        "tool_name":"CXAS"
+    },
+    "classification":{
+        "task":"classification",
+        "tool_name":"TorchXrayVision"
+    },
+    "detection":{
+        "task":"detection",
+        "tool_name":"FactcheXcker-Carinanet"
+    }
+}
