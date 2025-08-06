@@ -7,8 +7,11 @@
         "task":"classification",
         "tool_name":"TorchXrayVision"
     },
-    "detection":{
-        "task":"detection",
+    "chest detection":{
+        "task":"chest detection",
         "tool_name":"FactcheXcker-Carinanet"
+    },
+    "computation":{
+        "task":"computation"
     }
 }
