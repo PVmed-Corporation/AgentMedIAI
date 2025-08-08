@@ -13,7 +13,7 @@ with open('tools.json') as f:
 def match_tool(task_name):
     return tools.get(task_name)
 
-def segment(input, output, target):
+def segment(input, output, target, spacing):
     command = ['/opt/conda/bin/conda', 'run', '-n', 'CXAS', 
                'cxas_segment',
                '-i', f'{input}',
@@ -27,7 +27,6 @@ def segment(input, output, target):
     result_files = [f for f in glob.glob("/data/result/yilinyou/CXASresult/*.npy") ]
     result_files = result_files[0]
     # print(result_files)
-    spacing = [0.143, 0.143]    # cp.read_spacing(input_csv, input_name)
     
     cmd = ['/opt/conda/bin/conda', 'run', '-n', 'CXAS', '/opt/conda/envs/CXAS/bin/python', 
                '/data/result/yilinyou/AIagent/CXAS.py',
@@ -77,14 +76,14 @@ def chest_detect(input):
     return stdout,stderr
 
 def Medagent():
-    user_input = "分别分割上中下肺。 The input_path is '/data/result/yilinyou/00000001_000.png'"#input("please input:")
+    user_input = input("please input:")
     # print(user_input)
     data = LLM.LLm(user_input)
-    print(data)
-    # input_csv = input("please input metadata_path")
-    # input_name = input("please input image_name")
+    # print(data)
+    input_csv = input("please input metadata_path")
+    input_name = input("please input image_name")
 
-    spacing = [0.143, 0.143]# cp.read_spacing(input_csv, input_name)
+    spacing = cp.read_spacing(input_csv, input_name)
     computer_dic = {}
     computer_dic["user_input"] = f"{user_input}"
     computer_dic["spacing"] = {
@@ -99,7 +98,7 @@ def Medagent():
         # print(tool["tool_name"])
 
         if tool["task"]=="segmentation":
-            area = segment(task_info["input_path"], task_info["output_path"], task_info["target_organ"])
+            area = segment(task_info["input_path"], task_info["output_path"], task_info["target_organ"], spacing)
             computer_dic["area"] = {
                 "area":f"{area}",
                 "mean":"The total area of the target region mask image"
