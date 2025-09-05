@@ -1,0 +1,255 @@
+{
+    "tool_name": "MedGemma-VQA",
+    "tool_description": "MedGemma Visual Question Answering system leverages the 4B multimodal Gemma 3 variant with SigLIP image encoder for answering complex medical questions about radiological images. Trained on diverse medical datasets including VQA-RAD, it provides expert-level responses to clinical queries about chest X-rays, dermatology, ophthalmology, and histopathology images.",
+    "tool_author": "Google Health AI Developer Foundations",
+    "tool_version": "1.0.0",
+    "tool_url": "https://developers.google.com/health-ai-developer-foundations/medgemma/model-card",
+    "base_model": "Gemma 3 + SigLIP image encoder",
+    "demo_commands": [
+        "# Basic medical VQA with MedGemma\nfrom transformers import pipeline\nfrom PIL import Image\nimport torch\n\npipe = pipeline(\n    \"image-text-to-text\",\n    model=\"google/medgemma-4b-it\",\n    torch_dtype=torch.bfloat16,\n    device=\"cuda\",\n)\n\nimage = Image.open(\"../data/xray.jpg\")\n\nquestions = [\n    \"What abnormalities do you see in this chest X-ray?\",\n    \"Is there evidence of pneumonia in this image?\",\n    \"What is the cardiac silhouette appearance?\",\n    \"Are the lung fields clear or do you see any infiltrates?\",\n    \"What is your overall impression of this chest X-ray?\"\n]\n\nfor question in questions:\n    messages = [\n        {\n            \"role\": \"system\",\n            \"content\": [{\"type\": \"text\", \"text\": \"You are an expert radiologist. Provide detailed, accurate answers to medical questions about images.\"}]\n        },\n        {\n            \"role\": \"user\",\n            \"content\": [\n                {\"type\": \"text\", \"text\": question},\n                {\"type\": \"image\", \"image\": image},\n            ]\n        }\n    ]\n    \n    output = pipe(text=messages, max_new_tokens=200)\n    answer = output[0][\"generated_text\"][-1][\"content\"]\n    print(f\"Q: {question}\")\n    print(f\"A: {answer}\\n\")",
+        
+        "# Multi-modal medical reasoning\nfrom transformers import AutoProcessor, AutoModelForImageTextToText\nfrom PIL import Image\nimport torch\n\nmodel_id = \"google/medgemma-4b-it\"\nmodel = AutoModelForImageTextToText.from_pretrained(\n    model_id,\n    torch_dtype=torch.bfloat16,\n    device_map=\"auto\",\n)\nprocessor = AutoProcessor.from_pretrained(model_id)\n\nimage = Image.open(\"../data/xray.jpg\")\n\ndef ask_medical_question(image, question, context=None):\n    system_prompt = \"You are an expert radiologist with years of clinical experience. Provide detailed, evidence-based answers.\"\n    \n    if context:\n        user_prompt = f\"Context: {context}\\n\\nQuestion: {question}\"\n    else:\n        user_prompt = question\n    \n    messages = [\n        {\n            \"role\": \"system\",\n            \"content\": [{\"type\": \"text\", \"text\": system_prompt}]\n        },\n        {\n            \"role\": \"user\",\n            \"content\": [\n                {\"type\": \"text\", \"text\": user_prompt},\n                {\"type\": \"image\", \"image\": image}\n            ]\n        }\n    ]\n    \n    inputs = processor.apply_chat_template(\n        messages, add_generation_prompt=True, tokenize=True,\n        return_dict=True, return_tensors=\"pt\"\n    ).to(model.device, dtype=torch.bfloat16)\n    \n    input_len = inputs[\"input_ids\"].shape[-1]\n    \n    with torch.inference_mode():\n        generation = model.generate(**inputs, max_new_tokens=250, do_sample=False)\n        generation = generation[0][input_len:]\n    \n    answer = processor.decode(generation, skip_special_tokens=True)\n    return answer\n\n# Complex clinical scenarios\nclinical_questions = [\n    {\n        \"question\": \"What is the most likely diagnosis based on this chest X-ray?\",\n        \"context\": \"55-year-old male with fever, cough, and shortness of breath\"\n    },\n    {\n        \"question\": \"Should this patient be admitted to the hospital?\",\n        \"context\": \"Patient presents to emergency department with respiratory symptoms\"\n    },\n    {\n        \"question\": \"What follow-up imaging would you recommend?\",\n        \"context\": \"Initial screening chest X-ray shows suspicious findings\"\n    }\n]\n\nfor item in clinical_questions:\n    answer = ask_medical_question(image, item[\"question\"], item[\"context\"])\n    print(f\"Context: {item['context']}\")\n    print(f\"Question: {item['question']}\")\n    print(f\"Answer: {answer}\\n\")",
+        
+        "# Comparative analysis and differential diagnosis\ndef comprehensive_vqa_analysis(image_path):\n    image = Image.open(image_path)\n    \n    analysis_categories = {\n        \"findings\": \"What specific abnormalities or findings do you observe in this chest X-ray? List them systematically.\",\n        \"differential\": \"Based on the findings, what are the top 3 differential diagnoses you would consider?\",\n        \"severity\": \"How would you grade the severity of the abnormalities seen? Mild, moderate, or severe?\",\n        \"urgency\": \"Does this chest X-ray suggest any urgent or emergent conditions that require immediate attention?\",\n        \"recommendations\": \"What additional tests or imaging studies would you recommend based on these findings?\",\n        \"prognosis\": \"What is the likely prognosis for a patient with these radiological findings?\",\n        \"treatment\": \"What treatment approach would you suggest based on these radiological findings?\",\n        \"follow_up\": \"What follow-up imaging timeline would you recommend?\"\n    }\n    \n    comprehensive_results = {}\n    \n    for category, question in analysis_categories.items():\n        answer = ask_medical_question(image, question)\n        comprehensive_results[category] = answer\n        print(f\"\\n{category.upper()}:\")\n        print(f\"Q: {question}\")\n        print(f\"A: {answer}\")\n        print(\"-\" * 80)\n    \n    return comprehensive_results\n\nresults = comprehensive_vqa_analysis(\"../data/xray.jpg\")",
+        
+        "# Interactive VQA session with medical education focus\ndef medical_education_vqa(image_path, student_level=\"medical_student\"):\n    image = Image.open(image_path)\n    \n    # Adjust complexity based on student level\n    level_prompts = {\n        \"medical_student\": \"You are teaching a medical student. Explain concepts clearly with basic terminology.\",\n        \"resident\": \"You are teaching a radiology resident. Use appropriate medical terminology and discuss differential diagnoses.\",\n        \"attending\": \"You are discussing with an attending physician. Provide expert-level analysis and nuanced interpretations.\"\n    }\n    \n    educational_questions = [\n        \"Can you walk me through your systematic approach to reading this chest X-ray?\",\n        \"What normal anatomical structures should I identify first?\",\n        \"What abnormal findings are present and what do they suggest?\",\n        \"How would you explain these findings to a patient in layman's terms?\",\n        \"What are the key teaching points from this case?\",\n        \"What mistakes should I avoid when interpreting similar cases?\"\n    ]\n    \n    print(f\"Educational VQA Session - Level: {student_level.replace('_', ' ').title()}\")\n    print(\"=\" * 60)\n    \n    for question in educational_questions:\n        messages = [\n            {\n                \"role\": \"system\",\n                \"content\": [{\"type\": \"text\", \"text\": level_prompts[student_level]}]\n            },\n            {\n                \"role\": \"user\",\n                \"content\": [\n                    {\"type\": \"text\", \"text\": question},\n                    {\"type\": \"image\", \"image\": image}\n                ]\n            }\n        ]\n        \n        inputs = processor.apply_chat_template(\n            messages, add_generation_prompt=True, tokenize=True,\n            return_dict=True, return_tensors=\"pt\"\n        ).to(model.device, dtype=torch.bfloat16)\n        \n        input_len = inputs[\"input_ids\"].shape[-1]\n        \n        with torch.inference_mode():\n            generation = model.generate(**inputs, max_new_tokens=300, do_sample=False)\n            generation = generation[0][input_len:]\n        \n        answer = processor.decode(generation, skip_special_tokens=True)\n        \n        print(f\"\\nQ: {question}\")\n        print(f\"A: {answer}\")\n        print(\"-\" * 40)\n\n# Run educational sessions for different levels\nfor level in [\"medical_student\", \"resident\", \"attending\"]:\n    medical_education_vqa(\"../data/xray.jpg\", level)\n    print(\"\\n\" + \"=\" * 80 + \"\\n\")"
+    ],
+    "input_schema": {
+        "type": "object",
+        "required": [
+            "image",
+            "question"
+        ],
+        "properties": {
+            "image": {
+                "type": "string",
+                "description": "Path to medical image file (.jpg, .png, .dcm) or PIL Image object for VQA."
+            },
+            "question": {
+                "type": "string",
+                "description": "Medical question to ask about the image."
+            },
+            "context": {
+                "type": "string",
+                "description": "Additional clinical context or patient information to inform the answer."
+            },
+            "system_prompt": {
+                "type": "string",
+                "default": "You are an expert radiologist. Provide detailed, accurate answers to medical questions about images.",
+                "description": "System prompt to define the model's role and expertise level."
+            },
+            "max_new_tokens": {
+                "type": "integer",
+                "default": 250,
+                "description": "Maximum number of tokens to generate for the answer."
+            },
+            "education_level": {
+                "type": "string",
+                "enum": ["medical_student", "resident", "attending", "general"],
+                "default": "general",
+                "description": "Educational level to tailor the complexity of the response."
+            },
+            "answer_format": {
+                "type": "string",
+                "enum": ["detailed", "concise", "differential", "teaching"],
+                "default": "detailed",
+                "description": "Desired format for the answer."
+            },
+            "include_confidence": {
+                "type": "boolean",
+                "default": false,
+                "description": "Whether to include confidence assessment in the answer."
+            }
+        }
+    },
+    "output_schema": {
+        "type": "object",
+        "properties": {
+            "question": {
+                "type": "string",
+                "description": "The input question asked about the medical image."
+            },
+            "answer": {
+                "type": "string",
+                "description": "Detailed answer to the medical question based on image analysis."
+            },
+            "confidence_level": {
+                "type": "string",
+                "enum": ["High", "Moderate", "Low"],
+                "description": "Confidence level in the provided answer."
+            },
+            "key_findings": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Key radiological findings identified that inform the answer."
+            },
+            "differential_diagnoses": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Potential differential diagnoses mentioned in the answer."
+            },
+            "clinical_recommendations": {
+                "type": "object",
+                "properties": {
+                    "immediate_actions": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Immediate clinical actions recommended."
+                    },
+                    "follow_up_studies": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Recommended follow-up imaging or tests."
+                    },
+                    "specialist_referrals": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Specialist referrals that may be needed."
+                    }
+                }
+            },
+            "educational_value": {
+                "type": "object",
+                "properties": {
+                    "teaching_points": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Key teaching points from this case."
+                    },
+                    "difficulty_level": {
+                        "type": "string",
+                        "description": "Educational difficulty level of the case."
+                    },
+                    "learning_objectives": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Learning objectives addressed by this case."
+                    }
+                }
+            },
+            "processing_info": {
+                "type": "object",
+                "properties": {
+                    "model_variant": {
+                        "type": "string",
+                        "description": "MedGemma model variant used for VQA."
+                    },
+                    "question_complexity": {
+                        "type": "string",
+                        "description": "Assessed complexity of the input question."
+                    },
+                    "response_time": {
+                        "type": "number",
+                        "description": "Time taken to generate the answer in seconds."
+                    }
+                }
+            }
+        }
+    },
+    "supported_question_types": {
+        "diagnostic": {
+            "description": "Questions about diagnosis and differential diagnosis",
+            "examples": [
+                "What is the most likely diagnosis?",
+                "What are the differential diagnoses?",
+                "Is this condition present in the image?"
+            ]
+        },
+        "descriptive": {
+            "description": "Questions asking for description of findings",
+            "examples": [
+                "Describe the abnormalities you see",
+                "What structures are visible?",
+                "How would you characterize this lesion?"
+            ]
+        },
+        "comparative": {
+            "description": "Questions comparing findings or images",
+            "examples": [
+                "How does this compare to normal?",
+                "What has changed from the previous study?",
+                "Is this better or worse than expected?"
+            ]
+        },
+        "prognostic": {
+            "description": "Questions about prognosis and outcomes",
+            "examples": [
+                "What is the likely prognosis?",
+                "How will this condition progress?",
+                "What are the potential complications?"
+            ]
+        },
+        "therapeutic": {
+            "description": "Questions about treatment and management",
+            "examples": [
+                "What treatment would you recommend?",
+                "Should this patient be hospitalized?",
+                "What follow-up is needed?"
+            ]
+        },
+        "educational": {
+            "description": "Questions for medical education and training",
+            "examples": [
+                "What are the teaching points?",
+                "How would you explain this to a student?",
+                "What should I look for in similar cases?"
+            ]
+        }
+    },
+    "clinical_applications": [
+        "Medical education and radiology training",
+        "Clinical decision support for complex cases",
+        "Second opinion consultation for difficult diagnoses",
+        "Quality assurance and peer review",
+        "Continuing medical education and assessment",
+        "Research applications in medical imaging",
+        "Patient education and communication",
+        "Radiology resident training and evaluation"
+    ],
+    "limitations": [
+        "Answers should be verified by qualified medical professionals",
+        "Not a substitute for clinical judgment and expertise",
+        "May not capture all subtle or rare findings",
+        "Context-dependent accuracy - clinical correlation required",
+        "Limited to training data knowledge cutoff",
+        "May be sensitive to question phrasing and formatting",
+        "Not validated for direct clinical decision-making",
+        "Requires human oversight for patient safety"
+    ],
+    "installation_requirements": {
+        "python": ">=3.8",
+        "transformers": ">=4.50.0",
+        "torch": ">=1.9.0",
+        "torchvision": ">=0.10.0",
+        "Pillow": ">=8.0.0",
+        "accelerate": ">=0.20.0"
+    },
+    "technical_details": {
+        "architecture": "Gemma 3 with SigLIP image encoder",
+        "vqa_capabilities": "Multi-modal reasoning with medical knowledge",
+        "training_datasets": {
+            "VQA-RAD": "Visual question answering for radiology",
+            "MedQA": "Medical question answering dataset",
+            "Medical_images": "Diverse medical imaging datasets"
+        },
+        "question_understanding": "Natural language processing for medical queries",
+        "answer_generation": "Contextual response generation with medical reasoning",
+        "multimodal_fusion": "Vision-language integration for comprehensive analysis"
+    },
+    "evaluation_metrics": {
+        "answer_accuracy": "Evaluated on medical VQA benchmarks",
+        "clinical_relevance": "Assessment by medical professionals",
+        "educational_value": "Effectiveness for medical training",
+        "response_quality": "Completeness and clarity of answers"
+    },
+    "supported_formats": {
+        "input": [".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".dcm"],
+        "output": ["text", "structured_answer", "educational_content", "clinical_report"]
+    },
+    "licensing_and_terms": {
+        "license": "Health AI Developer Foundations terms of use",
+        "availability": "Google Cloud Model Garden, Hugging Face",
+        "usage_terms": "Intended for developers in life sciences and healthcare",
+        "disclaimer": "For research and educational purposes - not for direct clinical use"
+    }
+} 

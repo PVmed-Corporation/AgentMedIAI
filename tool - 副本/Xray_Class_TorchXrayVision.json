@@ -1,0 +1,173 @@
+{
+    "tool_name": "TorchXrayVision",
+    "tool_description": "TorchXrayVision is a comprehensive library for chest X-ray analysis providing pre-trained models for classification, segmentation, and autoencoders. It supports multiple chest X-ray datasets and provides tools for pathology detection, distribution shift analysis, and pathology mask generation. The library includes models trained on various datasets like NIH, CheXpert, MIMIC-CXR, and more.",
+    "tool_author": "Joseph Paul Cohen et al.",
+    "tool_version": "1.3.4",
+    "tool_url": "https://github.com/mlmed/torchxrayvision",
+    "demo_commands": [
+        "# Basic chest X-ray classification example\nimport torchxrayvision as xrv\nimport skimage, torch, torchvision\n\n# Load and preprocess image\nimg = skimage.io.imread('../data/xray.jpg')\nimg = xrv.datasets.normalize(img, 255)\nimg = img.mean(2)[None, ...]\ntransform = torchvision.transforms.Compose([xrv.datasets.XRayCenterCrop(), xrv.datasets.XRayResizer(224)])\nimg = transform(img)\nimg = torch.from_numpy(img)\n\n# Load model and predict\nmodel = xrv.models.DenseNet(weights='densenet121-res224-all')\noutputs = model(img[None,...])\nresults = dict(zip(model.pathologies, outputs[0].detach().numpy()))\nprint('Pathology predictions:', results)",
+        "# Using NIH-specific model for chest X-ray analysis\nimport torchxrayvision as xrv\nimport skimage, torch, torchvision\n\n# Load image and preprocess\nimg = skimage.io.imread('../data/xray.jpg')\nimg = xrv.datasets.normalize(img, 255)\nif len(img.shape) > 2: img = img.mean(2)\nimg = img[None, ...]\n\n# Apply transforms\ntransform = torchvision.transforms.Compose([xrv.datasets.XRayCenterCrop(), xrv.datasets.XRayResizer(224)])\nimg = transform(img)\nimg = torch.from_numpy(img)\n\n# Load NIH model and predict\nmodel = xrv.models.DenseNet(weights='densenet121-res224-nih')\nwith torch.no_grad():\n    outputs = model(img[None,...])\n    predictions = dict(zip(model.pathologies, outputs[0].detach().numpy()))\n    \n# Show high confidence predictions\nfor pathology, score in predictions.items():\n    if score > 0.5:\n        print(f'{pathology}: {score:.3f}')",
+        "# RSNA pneumonia detection example\nimport torchxrayvision as xrv\nimport skimage, torch, torchvision\n\n# Image preprocessing pipeline\nimg = skimage.io.imread('../data/xray.jpg')\nimg = xrv.datasets.normalize(img, 255)\nif len(img.shape) == 3: img = img.mean(2)\nimg = img[None, ...]\n\n# Transform and prepare tensor\ntransforms = torchvision.transforms.Compose([\n    xrv.datasets.XRayCenterCrop(),\n    xrv.datasets.XRayResizer(224)\n])\nimg = transforms(img)\nimg = torch.from_numpy(img)\n\n# Load RSNA model for pneumonia detection\nmodel = xrv.models.DenseNet(weights='densenet121-res224-rsna')\nmodel.eval()\n\n# Get prediction\nwith torch.no_grad():\n    output = model(img[None,...])\n    pneumonia_prob = torch.sigmoid(output)[0, 0].item()\n    print(f'Pneumonia probability: {pneumonia_prob:.3f}')\n    print(f'Prediction: {\"Pneumonia detected\" if pneumonia_prob > 0.5 else \"No pneumonia\"}')",
+        "# Batch processing multiple chest X-rays\nimport torchxrayvision as xrv\nimport torch, torchvision\nimport glob, skimage\n\n# Load model\nmodel = xrv.models.DenseNet(weights='densenet121-res224-all')\nmodel.eval()\n\n# Process multiple images\nimage_paths = glob.glob('../data/*.jpg')\nresults = []\n\nfor img_path in image_paths:\n    # Load and preprocess\n    img = skimage.io.imread(img_path)\n    img = xrv.datasets.normalize(img, 255)\n    if len(img.shape) == 3: img = img.mean(2)\n    img = img[None, ...]\n    \n    # Transform\n    transform = torchvision.transforms.Compose([\n        xrv.datasets.XRayCenterCrop(),\n        xrv.datasets.XRayResizer(224)\n    ])\n    img = transform(img)\n    img = torch.from_numpy(img)\n    \n    # Predict\n    with torch.no_grad():\n        outputs = model(img[None,...])\n        predictions = dict(zip(model.pathologies, outputs[0].detach().numpy()))\n        results.append({'image': img_path, 'predictions': predictions})\n\n# Display results\nfor result in results:\n    print(f\"\\nImage: {result['image']}\")\n    top_predictions = sorted(result['predictions'].items(), key=lambda x: x[1], reverse=True)[:3]\n    for pathology, score in top_predictions:\n        print(f\"  {pathology}: {score:.3f}\")"
+    ],
+    "input_schema": {
+        "type": "object",
+        "required": [
+            "image_path",
+            "model_type"
+        ],
+        "properties": {
+            "image_path": {
+                "type": "string",
+                "description": "Path to the input chest X-ray image file (JPEG, PNG, or DICOM format)."
+            },
+            "model_type": {
+                "type": "string",
+                "enum": [
+                    "densenet121-res224-all",
+                    "densenet121-res224-rsna",
+                    "densenet121-res224-nih",
+                    "densenet121-res224-pc",
+                    "densenet121-res224-chex",
+                    "densenet121-res224-mimic_nb",
+                    "densenet121-res224-mimic_ch",
+                    "resnet50-res224-all"
+                ],
+                "default": "densenet121-res224-all",
+                "description": "Pre-trained model to use for classification. Different models are trained on different datasets."
+            },
+            "output_format": {
+                "type": "string",
+                "enum": ["probabilities", "predictions", "both"],
+                "default": "both",
+                "description": "Format of the output predictions."
+            },
+            "threshold": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "default": 0.5,
+                "description": "Threshold for binary classification decisions."
+            },
+            "preprocessing": {
+                "type": "boolean",
+                "default": true,
+                "description": "Whether to apply standard preprocessing (normalization, resizing) to the input image."
+            }
+        }
+    },
+    "output_schema": {
+        "type": "object",
+        "properties": {
+            "predictions": {
+                "type": "object",
+                "description": "Dictionary containing pathology predictions with confidence scores.",
+                "properties": {
+                    "pathology_scores": {
+                        "type": "object",
+                        "description": "Confidence scores for each pathology class."
+                    },
+                    "binary_predictions": {
+                        "type": "object",
+                        "description": "Binary predictions (0/1) for each pathology based on threshold."
+                    }
+                }
+            },
+            "pathologies": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "description": "List of pathology classes that the model can detect."
+            },
+            "model_info": {
+                "type": "object",
+                "properties": {
+                    "model_name": {
+                        "type": "string",
+                        "description": "Name of the model used for prediction."
+                    },
+                    "training_datasets": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Datasets used to train the model."
+                    }
+                }
+            },
+            "preprocessing_info": {
+                "type": "object",
+                "properties": {
+                    "image_size": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "description": "Size of the processed image [height, width]."
+                    },
+                    "normalization": {
+                        "type": "string",
+                        "description": "Normalization method applied to the image."
+                    }
+                }
+            }
+        }
+    },
+    "pathology_classes": {
+        "densenet121-res224-all": [
+            "Atelectasis",
+            "Consolidation",
+            "Infiltration",
+            "Pneumothorax",
+            "Edema",
+            "Emphysema",
+            "Fibrosis",
+            "Effusion",
+            "Pneumonia",
+            "Pleural_Thickening",
+            "Cardiomegaly",
+            "Nodule",
+            "Mass",
+            "Hernia",
+            "Lung Lesion",
+            "Fracture",
+            "Lung Opacity",
+            "Enlarged Cardiomediastinum"
+        ],
+        "densenet121-res224-rsna": [
+            "Lung Opacity"
+        ],
+        "densenet121-res224-nih": [
+            "Atelectasis",
+            "Consolidation", 
+            "Infiltration",
+            "Pneumothorax",
+            "Edema",
+            "Emphysema",
+            "Fibrosis",
+            "Effusion",
+            "Pneumonia",
+            "Pleural_Thickening",
+            "Cardiomegaly",
+            "Nodule",
+            "Mass",
+            "Hernia"
+        ],
+        "densenet121-res224-chex": [
+            "Atelectasis",
+            "Cardiomegaly",
+            "Consolidation",
+            "Edema",
+            "Effusion",
+            "Enlarged Cardiomediastinum",
+            "Fracture",
+            "Lung Lesion",
+            "Lung Opacity",
+            "Pleural Other",
+            "Pneumonia",
+            "Pneumothorax",
+            "Support Devices"
+        ]
+    }
+}

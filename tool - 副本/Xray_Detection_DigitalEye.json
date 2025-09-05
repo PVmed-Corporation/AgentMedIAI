@@ -1,0 +1,128 @@
+{
+    "tool_name": "DigitalEye-Mammography",
+    "tool_description": "Digital Eye for Mammography is a comprehensive toolkit and benchmark for mass detection and classification in mammograms. It provides multiple state-of-the-art models including ATSS, Cascade R-CNN, Deformable DETR, DETR, DoubleHead R-CNN, Dynamic R-CNN, Faster R-CNN, FCOS, RetinaNet, VarifocalNet, and YOLOv3, with support for model ensemble and breast segmentation preprocessing.",
+    "tool_author": "Ramazan Terzi et al.",
+    "tool_version": "1.0.0",
+    "tool_url": "https://github.com/cbddobvyz/digitaleye-mammography",
+    "demo_commands": [
+        "# Using Docker for Digital Eye Mammography\n# Step 1: Pull the Docker image\ndocker pull cbddobvyz/digitaleye-mammography:latest\n\n# Step 2: Run the container with GPU support\ndocker run --gpus all -it \\\n    -v /path/to/your/images:/workspace/images \\\n    -v /path/to/output:/workspace/output \\\n    cbddobvyz/digitaleye-mammography:latest \\\n    python mass_inference.py \\\n    --model_enum 0 1 2 \\\n    --img_path /workspace/images \\\n    --classify_mass True \\\n    --segment_breast True \\\n    --enable_ensemble True",
+        "# Using Docker with specific model selection\ndocker run --gpus all -it \\\n    -v /path/to/your/images:/workspace/images \\\n    -v /path/to/output:/workspace/output \\\n    cbddobvyz/digitaleye-mammography:latest \\\n    python mass_inference.py \\\n    --model_enum 3 8 10 \\\n    --img_path /workspace/images \\\n    --classify_mass False",
+        "# Using Docker with custom thresholds\ndocker run --gpus all -it \\\n    -v /path/to/your/images:/workspace/images \\\n    -v /path/to/output:/workspace/output \\\n    cbddobvyz/digitaleye-mammography:latest \\\n    python mass_inference.py \\\n    --model_enum 2 4 5 7 9 \\\n    --img_path /workspace/images \\\n    --enable_ensemble \\\n    --nms_iou_threshold 0.1 \\\n    --confidence_threshold 0.33 \\\n    --ap_threshold 0.5"
+    ],
+    "input_schema": {
+        "type": "object",
+        "required": [
+            "image_path",
+            "model_enum"
+        ],
+        "properties": {
+            "image_path": {
+                "type": "string",
+                "description": "Path to the input mammogram images directory."
+            },
+            "model_enum": {
+                "type": "array",
+                "items": {
+                    "type": "integer",
+                    "enum": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                    "description": "Model selection: 0=ATSS, 1=Cascade R-CNN, 2=Deformable DETR, 3=DETR, 4=DoubleHead R-CNN, 5=Dynamic R-CNN, 6=Faster R-CNN, 7=FCOS, 8=RetinaNet, 9=VarifocalNet, 10=YOLOv3"
+                }
+            },
+            "classify_mass": {
+                "type": "boolean",
+                "default": true,
+                "description": "Whether to classify masses as benign or malignant."
+            },
+            "segment_breast": {
+                "type": "boolean",
+                "default": true,
+                "description": "Whether to perform breast segmentation preprocessing."
+            },
+            "enable_ensemble": {
+                "type": "boolean",
+                "default": false,
+                "description": "Whether to use model ensemble."
+            },
+            "nms_iou_threshold": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "default": 0.1,
+                "description": "NMS IoU threshold for post-processing."
+            },
+            "confidence_threshold": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "default": 0.05,
+                "description": "Confidence threshold for post-processing."
+            },
+            "ap_threshold": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "default": 0.1,
+                "description": "IoU threshold for determining true positives."
+            }
+        }
+    },
+    "output_schema": {
+        "type": "object",
+        "properties": {
+            "detections": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "bbox": {
+                            "type": "array",
+                            "items": {
+                                "type": "number"
+                            },
+                            "description": "Bounding box coordinates [x1, y1, x2, y2]"
+                        },
+                        "confidence": {
+                            "type": "number",
+                            "description": "Detection confidence score"
+                        },
+                        "classification": {
+                            "type": "string",
+                            "enum": ["benign", "malignant"],
+                            "description": "Mass classification (if classify_mass=True)"
+                        }
+                    }
+                }
+            },
+            "model_info": {
+                "type": "object",
+                "properties": {
+                    "models_used": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "List of models used for detection"
+                    },
+                    "ensemble": {
+                        "type": "boolean",
+                        "description": "Whether ensemble was used"
+                    }
+                }
+            },
+            "preprocessing_info": {
+                "type": "object",
+                "properties": {
+                    "breast_segmentation": {
+                        "type": "boolean",
+                        "description": "Whether breast segmentation was performed"
+                    }
+                }
+            }
+        }
+    },
+    "supported_datasets": [
+        "KETEM"
+    ],
+    "license": "GPL-3.0",
+    "reference": "@article{terzi2025digital,\n  title={The digital eye for mammography: deep transfer learning and model ensemble based open-source toolkit for mass detection and classification},\n  author={Terzi, Ramazan and Kılıç, Ahmet Enes and Karaahmetoğlu, Gökhan and Özdemir, Okan Bilge},\n  journal={Signal, Image and Video Processing},\n  volume={19},\n  number={1},\n  pages={170},\n  year={2025},\n  publisher={Springer}\n}"
+} 

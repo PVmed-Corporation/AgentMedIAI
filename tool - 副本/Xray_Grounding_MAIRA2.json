@@ -1,0 +1,191 @@
+{
+    "tool_name": "MAIRA-2",
+    "tool_description": "MAIRA-2 is a multimodal transformer designed for phrase grounding in chest X-rays. It can localize specific medical findings mentioned in text phrases by generating bounding boxes on radiographic images. The model combines RAD-DINO-MAIRA-2 image encoder with vicuna-7b-v1.5 language model to provide precise spatial localization of radiological findings.",
+    "tool_author": "Microsoft Research Health Futures",
+    "tool_version": "1.0.0",
+    "tool_url": "https://huggingface.co/microsoft/maira-2",
+    "base_model": "RAD-DINO-MAIRA-2 + vicuna-7b-v1.5",
+    "demo_commands": [
+        "# Basic phrase grounding for chest X-ray findings\nfrom transformers import AutoModelForCausalLM, AutoProcessor\nfrom PIL import Image\nimport torch\n\nmodel = AutoModelForCausalLM.from_pretrained(\"microsoft/maira-2\", trust_remote_code=True)\nprocessor = AutoProcessor.from_pretrained(\"microsoft/maira-2\", trust_remote_code=True)\n\ndevice = torch.device(\"cuda\" if torch.cuda.is_available() else \"cpu\")\nmodel = model.eval().to(device)\n\nimage = Image.open(\"../data/xray.jpg\")\nphrase = \"Pleural effusion\"\n\nprocessed_inputs = processor.format_and_preprocess_phrase_grounding_input(\n    frontal_image=image,\n    phrase=phrase,\n    return_tensors=\"pt\"\n).to(device)\n\nwith torch.no_grad():\n    output = model.generate(**processed_inputs, max_new_tokens=150, use_cache=True)\n\nprompt_length = processed_inputs[\"input_ids\"].shape[-1]\ndecoded_text = processor.decode(output[0][prompt_length:], skip_special_tokens=True)\nprediction = processor.convert_output_to_plaintext_or_grounded_sequence(decoded_text)\n\nprint(f\"Phrase: {phrase}\")\nprint(f\"Grounding result: {prediction}\")",
+        
+        "# Multiple findings grounding in single image\nfindings_to_ground = [\n    \"Cardiomegaly\",\n    \"Pneumonia\",\n    \"Pleural effusion\",\n    \"Atelectasis\",\n    \"Pneumothorax\"\n]\n\nimage = Image.open(\"../data/xray.jpg\")\ngrounding_results = {}\n\nfor finding in findings_to_ground:\n    processed_inputs = processor.format_and_preprocess_phrase_grounding_input(\n        frontal_image=image,\n        phrase=finding,\n        return_tensors=\"pt\"\n    ).to(device)\n    \n    with torch.no_grad():\n        output = model.generate(**processed_inputs, max_new_tokens=150, use_cache=True)\n    \n    prompt_length = processed_inputs[\"input_ids\"].shape[-1]\n    decoded_text = processor.decode(output[0][prompt_length:], skip_special_tokens=True)\n    prediction = processor.convert_output_to_plaintext_or_grounded_sequence(decoded_text)\n    \n    grounding_results[finding] = prediction\n\nfor finding, result in grounding_results.items():\n    if result[1] is not None:  # If bounding box exists\n        bbox = result[1][0] if isinstance(result[1], list) else result[1]\n        print(f\"{finding}: Found at coordinates {bbox}\")\n    else:\n        print(f\"{finding}: No localization found\")",
+        
+        "# Batch processing for clinical workflow\nimport os\nfrom glob import glob\n\nimage_dir = \"../data/\"\nimage_paths = glob(os.path.join(image_dir, \"*.jpg\")) + glob(os.path.join(image_dir, \"*.png\"))\n\nclinical_findings = [\"Consolidation\", \"Nodule\", \"Mass\", \"Infiltrate\"]\n\nfor image_path in image_paths[:3]:  # Process first 3 images\n    print(f\"\\nAnalyzing: {os.path.basename(image_path)}\")\n    image = Image.open(image_path)\n    \n    for finding in clinical_findings:\n        processed_inputs = processor.format_and_preprocess_phrase_grounding_input(\n            frontal_image=image,\n            phrase=finding,\n            return_tensors=\"pt\"\n        ).to(device)\n        \n        with torch.no_grad():\n            output = model.generate(**processed_inputs, max_new_tokens=150, use_cache=True)\n        \n        prompt_length = processed_inputs[\"input_ids\"].shape[-1]\n        decoded_text = processor.decode(output[0][prompt_length:], skip_special_tokens=True)\n        prediction = processor.convert_output_to_plaintext_or_grounded_sequence(decoded_text)\n        \n        if prediction[1] is not None:\n            print(f\"  {finding}: Localized\")\n        else:\n            print(f\"  {finding}: Not detected\")",
+        
+        "# Advanced grounding with coordinate adjustment\ndef ground_finding_with_visualization(image_path, phrase):\n    from PIL import ImageDraw\n    \n    image = Image.open(image_path)\n    original_size = image.size\n    \n    processed_inputs = processor.format_and_preprocess_phrase_grounding_input(\n        frontal_image=image,\n        phrase=phrase,\n        return_tensors=\"pt\"\n    ).to(device)\n    \n    with torch.no_grad():\n        output = model.generate(**processed_inputs, max_new_tokens=150, use_cache=True)\n    \n    prompt_length = processed_inputs[\"input_ids\"].shape[-1]\n    decoded_text = processor.decode(output[0][prompt_length:], skip_special_tokens=True)\n    prediction = processor.convert_output_to_plaintext_or_grounded_sequence(decoded_text)\n    \n    if prediction[1] is not None:\n        # Adjust coordinates for original image size\n        bbox = prediction[1][0] if isinstance(prediction[1], list) else prediction[1]\n        adjusted_bbox = processor.adjust_box_for_original_image_size(\n            bbox, original_size\n        )\n        \n        # Draw bounding box on image\n        draw = ImageDraw.Draw(image)\n        draw.rectangle(adjusted_bbox, outline=\"red\", width=3)\n        \n        return {\n            \"phrase\": phrase,\n            \"found\": True,\n            \"coordinates\": adjusted_bbox,\n            \"image_with_bbox\": image\n        }\n    else:\n        return {\n            \"phrase\": phrase,\n            \"found\": False,\n            \"coordinates\": None,\n            \"image_with_bbox\": image\n        }\n\nresult = ground_finding_with_visualization(\"../data/xray.jpg\", \"Cardiac enlargement\")\nprint(f\"Finding '{result['phrase']}' {'found' if result['found'] else 'not found'}\")\nif result['found']:\n    print(f\"Coordinates: {result['coordinates']}\")\n    result['image_with_bbox'].save(\"grounded_result.jpg\")"
+    ],
+    "input_schema": {
+        "type": "object",
+        "required": [
+            "frontal_image",
+            "phrase"
+        ],
+        "properties": {
+            "frontal_image": {
+                "type": "string",
+                "description": "Path to frontal chest X-ray image file (.jpg, .png, .dcm) or PIL Image object."
+            },
+            "phrase": {
+                "type": "string",
+                "description": "Medical phrase or finding to ground in the image (e.g., 'Pleural effusion', 'Cardiomegaly', 'Pneumonia')."
+            },
+            "lateral_image": {
+                "type": "string",
+                "description": "Optional path to lateral chest X-ray from the same study for enhanced grounding context."
+            },
+            "max_new_tokens": {
+                "type": "integer",
+                "default": 150,
+                "description": "Maximum number of tokens to generate for grounding response."
+            },
+            "return_coordinates": {
+                "type": "boolean",
+                "default": true,
+                "description": "Whether to return bounding box coordinates for localized findings."
+            },
+            "adjust_for_original_size": {
+                "type": "boolean",
+                "default": true,
+                "description": "Whether to adjust bounding box coordinates to match original image dimensions."
+            }
+        }
+    },
+    "output_schema": {
+        "type": "object",
+        "properties": {
+            "grounded_phrase": {
+                "type": "string",
+                "description": "The input phrase that was grounded in the image."
+            },
+            "localized": {
+                "type": "boolean",
+                "description": "Whether the phrase was successfully localized in the image."
+            },
+            "bounding_boxes": {
+                "type": "array",
+                "items": {
+                    "type": "array",
+                    "items": {"type": "number"},
+                    "minItems": 4,
+                    "maxItems": 4,
+                    "description": "Bounding box coordinates [x_topleft, y_topleft, x_bottomright, y_bottomright]"
+                },
+                "description": "List of bounding box coordinates for localized findings (relative to processed image or adjusted for original)."
+            },
+            "confidence_assessment": {
+                "type": "string",
+                "enum": ["High confidence localization", "Moderate confidence", "Low confidence", "Not localized"],
+                "description": "Assessment of grounding confidence based on model response."
+            },
+            "clinical_context": {
+                "type": "object",
+                "properties": {
+                    "finding_category": {
+                        "type": "string",
+                        "description": "Category of the grounded finding (pathology, anatomy, device, etc.)."
+                    },
+                    "clinical_significance": {
+                        "type": "string",
+                        "description": "Clinical relevance of the localized finding."
+                    },
+                    "typical_location": {
+                        "type": "string",
+                        "description": "Expected anatomical location for this type of finding."
+                    }
+                }
+            },
+            "processing_info": {
+                "type": "object",
+                "properties": {
+                    "model_version": {
+                        "type": "string",
+                        "description": "MAIRA-2 model version used for grounding."
+                    },
+                    "image_preprocessing": {
+                        "type": "object",
+                        "description": "Details about image preprocessing applied."
+                    },
+                    "inference_time": {
+                        "type": "number",
+                        "description": "Time taken for grounding inference in seconds."
+                    }
+                }
+            }
+        }
+    },
+    "supported_findings": {
+        "pathologies": [
+            "Atelectasis", "Cardiomegaly", "Consolidation", "Edema", "Emphysema",
+            "Enlarged Cardiomediastinum", "Fibrosis", "Fracture", "Hernia",
+            "Infiltration", "Lung Lesion", "Lung Opacity", "Mass", "Nodule",
+            "Pleural Effusion", "Pleural Other", "Pleural Thickening",
+            "Pneumonia", "Pneumothorax", "Support Devices"
+        ],
+        "anatomical_structures": [
+            "Heart", "Lungs", "Diaphragm", "Mediastinum", "Pleura",
+            "Ribs", "Clavicles", "Spine", "Trachea", "Cardiac silhouette"
+        ],
+        "medical_devices": [
+            "Central venous catheter", "Endotracheal tube", "Nasogastric tube",
+            "Pacemaker", "Chest tube", "Tracheostomy tube"
+        ]
+    },
+    "clinical_applications": [
+        "Precise localization of radiological findings in chest X-rays",
+        "Computer-aided diagnosis with spatial awareness",
+        "Educational tool for radiology training with visual feedback",
+        "Quality assurance in radiology reporting",
+        "Research in spatial distribution of pathologies",
+        "Integration with PACS systems for enhanced reporting",
+        "Automated annotation for machine learning dataset creation"
+    ],
+    "limitations": [
+        "Designed specifically for chest X-rays (frontal view primarily)",
+        "Trained on English language medical phrases only",
+        "Performance may vary with non-standard imaging protocols",
+        "Requires specific phrase formatting for optimal grounding",
+        "Not intended for clinical decision-making without radiologist review",
+        "May not localize very subtle or early-stage findings",
+        "Bounding box precision may vary with image quality and finding size"
+    ],
+    "installation_requirements": {
+        "python": ">=3.8",
+        "transformers": ">=4.46.0.dev0",
+        "torch": ">=1.9.0",
+        "torchvision": ">=0.10.0",
+        "Pillow": ">=8.0.0",
+        "protobuf": ">=3.20.0",
+        "sentencepiece": ">=0.1.95",
+        "special_installation": "pip install git+https://github.com/huggingface/transformers.git@88d960937c81a32bfb63356a2e8ecf7999619681"
+    },
+    "technical_details": {
+        "architecture": "Multimodal transformer with vision-language alignment",
+        "image_encoder": "RAD-DINO-MAIRA-2 (frozen during training)",
+        "language_model": "vicuna-7b-v1.5 (fully fine-tuned)",
+        "projection_layer": "Trained from scratch for multimodal alignment",
+        "input_resolution": "Variable (processed through RAD-DINO encoder)",
+        "training_datasets": {
+            "MIMIC-CXR": "55,218 ungrounded + 595 grounded examples",
+            "PadChest": "52,828 ungrounded + 3,122 grounded examples", 
+            "USMix_Private": "118,031 ungrounded + 53,613 grounded examples"
+        },
+        "total_parameters": "6.88B",
+        "grounding_capability": "Phrase-to-region localization with bounding box generation"
+    },
+    "model_performance": {
+        "grounding_accuracy": "Evaluated on phrase grounding tasks",
+        "localization_precision": "Measured by IoU with ground truth annotations",
+        "supported_languages": ["English"],
+        "inference_speed": "Optimized for clinical workflow integration",
+        "memory_requirements": "~14GB GPU memory for inference"
+    },
+    "supported_formats": {
+        "input": [".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".dcm"],
+        "output": ["json", "dictionary", "tuple", "visualization"]
+    },
+    "research_citations": {
+        "primary_paper": "MAIRA-2: Grounded Radiology Report Generation (S. Bannur, K. Bouzid et al., 2024)",
+        "arxiv_id": "2406.04449",
+        "related_work": "RAD-DINO, Vicuna-7b-1.5"
+    }
+} 

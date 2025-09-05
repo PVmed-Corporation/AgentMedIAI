@@ -1,0 +1,94 @@
+{
+  "tool_name": "retfound_de",
+  "tool_description": "retfound_de is an open-source deep learning tool that supports automatic classification of Diabetic Retinopathy (DR), Glaucoma, and Age-related Macular Degeneration (AMD) using pretrained models on various datasets.",
+  "tool_author": "Yukun Zhou and Zheyuan Wang",
+  "tool_version": "latest",
+  "tool_url": "https://hub.docker.com/r/medlab123/retfound_de",
+  "demo_commands": [
+    "docker run --rm -v /path/to/input:/src/data/input -v /path/to/output:/src/data/output retfound_de:latest --task DR --train_dataset aptos",
+    "docker run --rm -v /path/to/input:/src/data/input -v /path/to/output:/src/data/output retfound_de:latest --task DR --train_dataset messidor",
+    "docker run --rm -v /path/to/input:/src/data/input -v /path/to/output:/src/data/output retfound_de:latest --task DR --train_dataset idrid",
+    "docker run --rm -v /path/to/input:/src/data/input -v /path/to/output:/src/data/output retfound_de:latest --task Glaucoma --train_dataset glaucoma_fundus",
+    "docker run --rm -v /path/to/input:/src/data/input -v /path/to/output:/src/data/output retfound_de:latest --task Glaucoma --train_dataset papila",
+    "docker run --rm -v /path/to/input:/src/data/input -v /path/to/output:/src/data/output retfound_de:latest --task Glaucoma --train_dataset origa",
+    "docker run --rm -v /path/to/input:/src/data/input -v /path/to/output:/src/data/output retfound_de:latest --task AMD --train_dataset areds"
+  ],
+  "input_schema": {
+    "type": "object",
+    "required": ["input", "output", "task", "train_dataset"],
+    "properties": {
+      "input": {
+        "type": "string",
+        "description": "Path to the input folder containing fundus images."
+      },
+      "output": {
+        "type": "string",
+        "description": "Path to the output folder where the prediction results will be saved."
+      },
+      "task": {
+        "type": "string",
+        "enum": ["DR", "Glaucoma", "AMD"],
+        "description": "Specify the classification task: DR (Diabetic Retinopathy), Glaucoma, or AMD (Age-related Macular Degeneration)."
+      },
+      "train_dataset": {
+        "type": "string",
+        "description": "Name of the dataset used to fine-tune the model (e.g., aptos, messidor, idrid, glaucoma_fundus, papila, origa, areds)."
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "results_csv": {
+        "type": "string",
+        "description": "Path to the output CSV file that contains prediction results for each image."
+      }
+    },
+    "csv_format": {
+      "columns": [
+        "Name",
+        "raw_Prediction",
+        "Prediction",
+        "confidence",
+        "class_0_prob",
+        "class_1_prob",
+        "class_2_prob",
+        "class_3_prob",
+        "class_4_prob"
+      ],
+      "description": {
+        "Name": "Image file name (same as in input folder)",
+        "raw_Prediction": "Raw model output (original class index predicted by the model before any post-processing or mapping)",
+        "Prediction": "Final prediction after task-specific mapping (e.g., AMD or Glaucoma may map raw classes to binary)",
+        "confidence": "Predicted probability of the final class",
+        "class_0_prob": "Probability of class 0",
+        "class_1_prob": "Probability of class 1",
+        "class_2_prob": "Probability of class 2",
+        "class_3_prob": "Probability of class 3 (only for DR or AMD)",
+        "class_4_prob": "Probability of class 4 (only for DR)"
+      }
+    }
+  },
+  "class_maps": {
+    "DR": {
+      "type": "multiclass",
+      "num_classes": 5,
+      "classes": {
+        "0": "No DR",
+        "1": "Mild",
+        "2": "Moderate",
+        "3": "Severe",
+        "4": "Proliferative DR"
+      }
+    },
+    "Glaucoma": {
+      "0": "Normal",
+      "1": "Suspected Glaucoma/Glaucoma"
+    },
+    "AMD": {
+        "0": "No/early AMD",
+        "1": "Intermediate/advanced AMD"
+      }
+  }
+}
+

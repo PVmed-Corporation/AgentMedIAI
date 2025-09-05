@@ -1,0 +1,46 @@
+{
+  "tool_name": "LifespanSkullStripping",
+  "tool_description": "This tool performs skull stripping on T1-weighted MRIs across the lifespan using atlas-guided priors and deep learning. It selects age-appropriate brain atlases based on the provided subject age and outputs brain masks for input MRIs.",
+  "tool_author": "Limei Wang et al.",
+  "tool_version": "v2.0",
+  "tool_url": "https://github.com/DBC-Lab/Atlases-empowered_Lifespan_Skull_Stripping",
+  "demo_commands": [
+    "python LifespanStrip.py --pretrained_dir ../Model --input_path ./Testing_subjects --output_path ./Testing_subjects/output --age_in_month 660"
+  ],
+  "input_schema": {
+    "type": "object",
+    "required": ["pretrained_dir", "input_path", "output_path", "age_in_month"],
+    "properties": {
+      "pretrained_dir": {
+        "type": "string",
+        "description": "Path to the directory containing the pre-trained model (checkpoint downloaded here: https://www.dropbox.com/scl/fo/3f9o9sgls4e88jved8ooo/h?rlkey=h46zb5ulwbacrbh8vtsjwygn0&e=1&dl=0)."
+      },
+      "input_path": {
+        "type": "string",
+        "description": "Path to the folder containing input T1-weighted MRIs (nifty format)."
+      },
+      "output_path": {
+        "type": "string",
+        "description": "Directory where output brain masks will be saved."
+      },
+      "age_in_month": {
+        "type": "integer",
+        "description": "Age of the subject in months (used to select the best-fitting brain atlas)."
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "brain_mask": {
+        "type": "string",
+        "description": "Path to the generated skull-stripped brain mask in the output directory."
+      }
+    }
+  },
+  "model_requirements": {
+    "checkpoint": "Download pre-trained model from https://www.dropbox.com/scl/fo/3f9o9sgls4e88jved8ooo/h?rlkey=h46zb5ulwbacrbh8vtsjwygn0&dl=0 and place it under ./Model/"
+  },
+  "license": "MIT",
+  "citation": "@article{wang2025lifespan, title={A lifespan-generalizable skull-stripping model for magnetic resonance images that leverages prior knowledge from brain atlases}, author={Wang, Limei et al.}, journal={Nature Biomedical Engineering}, volume={9}, pages={700--715}, year={2025}, doi={https://doi.org/10.1038/s41551-024-01337-w}}"
+}

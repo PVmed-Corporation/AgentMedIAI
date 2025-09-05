@@ -1,0 +1,62 @@
+{
+  "tool_name": "DermRadiomic",
+  "tool_description": "DermRadiomic extracts handcrafted radiomic features from dermoscopic lesions using PyRadiomics. It requires an image–mask pair and can export a CSV of features plus an optional human-readable TXT summary. Users may choose any subset of the seven PyRadiomics feature classes or supply a YAML parameter file for advanced settings.",
+  "tool_author": "Siyuan Yan",
+  "tool_version": "latest",
+  "tool_url": "https://github.com/AIM-Harvard/pyradiomics",
+  "demo_commands": [
+    "docker run --rm --gpus all \n  -v /home/pathto/ISIC2018:/data \n  derm_radiomic \n  python infer.py --image /data/Test_Data/img.jpg --mask /data/Test_GroundTruth/mask.png --output radiomics_features.csv",
+    "docker run --rm --gpus all \n  -v /home/pathto/ISIC2018:/data \n  derm_radiomic \n  python infer.py --image /data/Test_Data/img.jpg --mask /data/Test_GroundTruth/mask.png --output features_shape_glcm.csv --features shape firstorder glcm",
+    "docker run --rm --gpus all \n  -v /home/pathto/ISIC2018:/data \n  derm_radiomic \n  python infer.py --image /data/Test_Data/img.jpg --mask /data/Test_GroundTruth/mask.png --output features.csv --output_txt summary.txt --features firstorder glrlm glszm"
+  ],
+  "input_schema": {
+    "type": "object",
+    "required": ["image", "mask", "output_csv"],
+    "properties": {
+      "image": {
+        "type": "string",
+        "description": "Absolute path to the dermoscopic image (JPG, PNG, NIfTI, etc.)."
+      },
+      "mask": {
+        "type": "string",
+        "description": "Path to the binary segmentation mask corresponding to the image."
+      },
+      "output_csv": {
+        "type": "string",
+        "description": "Destination CSV file for the extracted radiomic features."
+      },
+      "output_txt": {
+        "type": "string",
+        "description": "(Optional) TXT file for a human-readable summary of key features."
+      },
+      "features": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": ["shape", "firstorder", "glcm", "glrlm", "glszm", "gldm", "ngtdm"]
+        },
+        "description": "(Optional) List of feature classes to compute; defaults to all."
+      },
+      "param_file": {
+        "type": "string",
+        "description": "(Optional) YAML parameter file with custom PyRadiomics settings."
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "features_csv": {
+        "type": "string",
+        "description": "Path to the CSV file containing radiomic feature values."
+      },
+      "summary_txt": {
+        "type": "string",
+        "description": "(If requested) Path to the TXT summary file."
+      }
+    },
+    "csv_format": {
+      "description": "One row per image; columns correspond to the selected radiomic features."
+    }
+  }
+}

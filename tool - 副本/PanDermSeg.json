@@ -1,0 +1,45 @@
+{
+  "tool_name": "PanDermSeg",
+  "tool_description": "PanDermSeg is an open-source skin-lesion segmentation model (PanDerm backbone with UperNet decoder) fine-tuned on the ISIC2018 dermoscopy dataset. It takes a single dermoscopic image and outputs a binary mask (PNG) in which lesion pixels are labeled 1 and background pixels 0.",
+  "tool_author": "Siyuan Yan",
+  "tool_version": "latest",
+  "tool_url": "https://github.com/SiyuanYan1/PanDerm",
+  "demo_commands": [
+    "docker run --rm --gpus all -v /home/yourpath/ISIC2018:/data dermseg python infer.py --input  /data/imagesTs/ISIC_0012373.jpg --output /data/out/ISIC_0012373_pred.png --size 224"
+  ],
+  "input_schema": {
+    "type": "object",
+    "required": ["input", "output"],
+    "properties": {
+      "input": {
+        "type": "string",
+        "description": "Absolute path to the dermoscopic image (PNG/JPG)."
+      },
+      "output": {
+        "type": "string",
+        "description": "Destination path for the predicted mask (PNG)."
+      },
+      "size": {
+        "type": "integer",
+        "default": 224,
+        "description": "Resize dimension (short side) before inference."
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "mask_png": {
+        "type": "string",
+        "description": "Path to the PNG segmentation mask (2-class, single-channel)."
+      }
+    },
+    "mask_format": {
+      "description": "Single-channel 8-bit PNG where 0 = background, 1 = lesion"
+    }
+  },
+  "class_maps": {
+    "0": "background",
+    "1": "lesion"
+  }
+}

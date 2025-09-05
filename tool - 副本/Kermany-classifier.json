@@ -1,0 +1,27 @@
+{
+  "tool_name": "Kermany-VGG16-Classifier",
+  "tool_description": "Transfer-learning notebook (PyTorch) that fine-tunes VGG-16 on the popular Kermany OCT dataset (NORMAL, CNV, DME, DRUSEN).",
+  "tool_author": "Carlo Alberto Barbano",
+  "tool_version": "notebook-2025-02-10",
+  "tool_url": "https://www.kaggle.com/code/carloalbertobarbano/vgg16-transfer-learning-pytorch",
+  "demo_commands": [
+    "Run notebook cells 1-6 (training) then cell 7 (inference)."
+  ],
+  "input_schema": {
+    "type": "object",
+    "required": ["weights", "image"],
+    "properties": {
+      "weights": { "type": "string", "description": ".pth file exported from notebook." },
+      "image": { "type": "string", "description": "Single B-scan path." }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "prediction": { "type": "string", "description": "Predicted label." },
+      "prob_vector": { "type": "array", "items": { "type": "number" } }
+    }
+  },
+  "class_maps": { "0": "CNV", "1": "DME", "2": "DRUSEN", "3": "NORMAL" },
+  "license": "Apache-2.0 (Kaggle notebook)."
+}

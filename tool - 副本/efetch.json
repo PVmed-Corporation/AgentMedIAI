@@ -1,0 +1,38 @@
+{
+  "tool_name": "efetch",
+  "tool_description": "Performs an NCBI Entrez EFetch to retrieve full records for given UIDs. Accepts list or comma-separated string, respects rate limits, and returns the raw response (JSON if available, otherwise XML or text).",
+  "tool_author": "NCBI",
+  "tool_version": "1.0",
+  "tool_url": "",
+  "demo_commands": [
+    "efetch(db=\"gene\", id_list=[\"19171\",\"5699\"])",
+    "efetch(db=\"snp\", id_list=\"rs1234,rs5678\")"
+  ],
+  "input_schema": {
+    "type": "object",
+    "required": ["db", "id_list"],
+    "properties": {
+      "db": {
+        "type": "string",
+        "enum": ["gene", "snp", "omim"],
+        "description": "NCBI database name ('gene', 'snp', or 'omim')."
+      },
+      "id_list": {
+        "oneOf": [
+          {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          {
+            "type": "string"
+          }
+        ],
+        "description": "List of UIDs (array) or comma-separated UIDs (string)."
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "description": "The raw text response from EFetch (usually JSON or XML)."
+  }
+}

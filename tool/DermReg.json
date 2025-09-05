@@ -1,0 +1,47 @@
+{
+  "tool_name": "DermReg",
+  "tool_description": "DermReg performs pair-wise registration of a pair of two dermoscopic follow-up images using AKAZE key-points and a RANSAC-estimated homography. It outputs the aligned (warped) follow-up image together with the transformation matrix.",
+  "tool_author": "Siyuan Yan",
+  "tool_version": "latest",
+  "tool_url": "N/A",
+  "demo_commands": [
+    "docker run --rm --gpus all \n  -v /home/pathto/SDDI:/data \n  derm_reg \n  python Akaze_alignment.py /data/imagesTs/ISIC_0133200.jpg /data/imagesTs/ISIC_1435135.jpg -o out_dir --artifacts_removal",
+     "docker run --rm --gpus all \n  -v /home/pathto/SDDI:/data \n  derm_reg \n  python Akaze_alignment.py /data/imagesTs/ISIC_0133200.jpg /data/imagesTs/ISIC_1435135.jpg -o out_dir"
+  ],
+  "input_schema": {
+    "type": "object",
+    "required": ["baseline_image", "followup_image", "output_dir"],
+    "properties": {
+      "baseline_image": {
+        "type": "string",
+        "description": "Absolute path to the baseline (earlier) dermoscopic image."
+      },
+      "followup_image": {
+        "type": "string",
+        "description": "Absolute path to the follow-up dermoscopic image."
+      },
+      "output_dir": {
+        "type": "string",
+        "description": "Directory where the aligned image and transformation file will be saved."
+      },
+      "artifacts_removal": {
+        "type": "boolean",
+        "default": false,
+        "description": "If true, applies illumination / artifact removal before registration."
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "aligned_image_png": {
+        "type": "string",
+        "description": "Path to the warped follow-up image aligned to the baseline."
+      },
+      "transform_txt": {
+        "type": "string",
+        "description": "Path to a TXT file storing the 3 × 3 homography matrix."
+      }
+    }
+  }
+}

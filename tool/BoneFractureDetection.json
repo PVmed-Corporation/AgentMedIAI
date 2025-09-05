@@ -1,0 +1,190 @@
+{
+    "tool_name": "BoneFractureDetection",
+    "tool_description": "Bone Fracture Detection is a binary image classification model based on google/siglip2-base-patch16-224, trained to detect fractures in bone X-ray images. It is designed for use in medical diagnostics, clinical triage, and radiology assistance systems. The model achieves 83.03% accuracy with precision of 86.33% for fractured bones and 80.20% for non-fractured bones.",
+    "tool_author": "prithivMLmods",
+    "tool_version": "1.0.0",
+    "tool_url": "https://huggingface.co/prithivMLmods/Bone-Fracture-Detection",
+    "base_model": "google/siglip2-base-patch16-224",
+    "demo_commands": [
+        "# Basic bone fracture detection\nfrom transformers import AutoImageProcessor, SiglipForImageClassification\nfrom PIL import Image\nimport torch\n\nmodel_name = \"prithivMLmods/Bone-Fracture-Detection\"\nmodel = SiglipForImageClassification.from_pretrained(model_name)\nprocessor = AutoImageProcessor.from_pretrained(model_name)\n\nimage = Image.open(\"../data/xray.jpg\").convert(\"RGB\")\ninputs = processor(images=image, return_tensors=\"pt\")\nwith torch.no_grad():\n    outputs = model(**inputs)\n    logits = outputs.logits\n    probs = torch.nn.functional.softmax(logits, dim=1).squeeze().tolist()\n\nid2label = {\"0\": \"Fractured\", \"1\": \"Not Fractured\"}\nprediction = {id2label[str(i)]: round(probs[i], 3) for i in range(len(probs))}\nprint(prediction)"
+     ],
+    "input_schema": {
+        "type": "object",
+        "required": [
+            "image"
+        ],
+        "properties": {
+            "image": {
+                "type": "string",
+                "description": "Path to input bone X-ray image file (.jpg, .png, .dcm) or numpy array for direct processing."
+            },
+            "threshold": {
+                "type": "number",
+                "default": 0.5,
+                "minimum": 0.0,
+                "maximum": 1.0,
+                "description": "Confidence threshold for classification decision. Values above this threshold are considered high confidence."
+            },
+            "return_probabilities": {
+                "type": "boolean",
+                "default": true,
+                "description": "Whether to return probability scores for both classes or just the predicted class."
+            },
+            "preprocessing": {
+                "type": "object",
+                "properties": {
+                    "resize": {
+                        "type": "array",
+                        "items": {"type": "integer"},
+                        "default": [224, 224],
+                        "description": "Image resize dimensions for model input."
+                    },
+                    "normalize": {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Whether to apply ImageNet normalization to the input image."
+                    }
+                }
+            }
+        }
+    },
+    "output_schema": {
+        "type": "object",
+        "properties": {
+            "prediction": {
+                "type": "object",
+                "properties": {
+                    "Fractured": {
+                        "type": "number",
+                        "description": "Confidence score for fracture presence (0-1)."
+                    },
+                    "Not Fractured": {
+                        "type": "number",
+                        "description": "Confidence score for no fracture (0-1)."
+                    }
+                },
+                "description": "Probability scores for both fracture classes."
+            },
+            "predicted_class": {
+                "type": "string",
+                "enum": ["Fractured", "Not Fractured"],
+                "description": "Most likely classification result."
+            },
+            "confidence": {
+                "type": "number",
+                "description": "Confidence score of the predicted class (0-1)."
+            },
+            "clinical_assessment": {
+                "type": "string",
+                "enum": ["High confidence fracture", "High confidence no fracture", "Uncertain - requires review"],
+                "description": "Clinical interpretation based on confidence thresholds."
+            },
+            "processing_info": {
+                "type": "object",
+                "properties": {
+                    "model_used": {
+                        "type": "string",
+                        "description": "Model identifier used for prediction."
+                    },
+                    "image_dimensions": {
+                        "type": "array",
+                        "items": {"type": "integer"},
+                        "description": "Input image dimensions after preprocessing."
+                    },
+                    "inference_time": {
+                        "type": "number",
+                        "description": "Time taken for inference in seconds."
+                    }
+                }
+            }
+        }
+    },
+    "supported_classes": {
+        "0": {
+            "label": "Fractured",
+            "description": "Bone fracture is present in the X-ray image",
+            "clinical_significance": "Requires immediate medical attention and potential treatment"
+        },
+        "1": {
+            "label": "Not Fractured", 
+            "description": "No bone fracture detected in the X-ray image",
+            "clinical_significance": "No immediate fracture-related intervention needed"
+        }
+    },
+    "model_performance": {
+        "overall_accuracy": 0.8303,
+        "precision": {
+            "Fractured": 0.8633,
+            "Not Fractured": 0.8020
+        },
+        "recall": {
+            "Fractured": 0.7893,
+            "Not Fractured": 0.8722
+        },
+        "f1_score": {
+            "Fractured": 0.8246,
+            "Not Fractured": 0.8356
+        },
+        "support": {
+            "Fractured": 4480,
+            "Not Fractured": 4383
+        },
+        "macro_avg": {
+            "precision": 0.8326,
+            "recall": 0.8308,
+            "f1_score": 0.8301
+        },
+        "weighted_avg": {
+            "precision": 0.8330,
+            "recall": 0.8303,
+            "f1_score": 0.8301
+        }
+    },
+    "clinical_applications": [
+        "Emergency room triage for trauma patients",
+        "Orthopedic diagnostic support",
+        "Automated radiology review and screening",
+        "Clinical research in bone health and fracture patterns",
+        "Remote consultation and telemedicine",
+        "Quality assurance in radiology departments",
+        "Educational tool for medical training"
+    ],
+    "limitations": [
+        "Designed for binary classification only (fractured vs not fractured)",
+        "Does not specify fracture type, location, or severity",
+        "Requires high-quality X-ray images for optimal performance",
+        "May not perform well on pediatric or pathological bone conditions",
+        "Should be used as a diagnostic aid, not replacement for radiologist review",
+        "Performance may vary across different X-ray equipment and imaging protocols"
+    ],
+    "installation_requirements": {
+        "python": ">=3.7",
+        "transformers": ">=4.21.0",
+        "torch": ">=1.9.0",
+        "torchvision": ">=0.10.0",
+        "Pillow": ">=8.0.0",
+        "numpy": ">=1.19.0",
+        "gradio": ">=3.0.0"
+    },
+    "technical_details": {
+        "architecture": "SigLIP (Sigmoid Loss for Language Image Pre-training) with Vision Transformer",
+        "backbone": "google/siglip2-base-patch16-224",
+        "input_resolution": "224x224",
+        "patch_size": 16,
+        "dataset_info": {
+            "name": "Hemg/bone-fracture-detection",
+            "size": "8,863 bone X-ray images",
+            "classes": 2,
+            "format": "Binary classification dataset"
+        },
+        "training_details": {
+            "fine_tuning_approach": "Classification head fine-tuning",
+            "base_model_frozen": false,
+            "optimization": "AdamW optimizer with cosine learning rate scheduling"
+        }
+    },
+    "supported_formats": {
+        "input": [".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".dcm"],
+        "output": ["json", "dictionary", "gradio_interface", "batch_results"]
+    }
+} 

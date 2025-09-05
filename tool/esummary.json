@@ -1,0 +1,47 @@
+{
+  "tool_name": "esummary",
+  "tool_description": "Performs an NCBI Entrez ESummary to fetch summary metadata for one or more UIDs in the specified database. Handles both list and comma-separated string inputs, rate-limits calls, and returns parsed JSON.",
+  "tool_author": "NCBI",
+  "tool_version": "1.0",
+  "tool_url": "",
+  "demo_commands": [
+    "esummary(db=\"gene\", id_list=[\"19171\",\"5699\",\"8138\"])",
+    "esummary(db=\"omim\", id_list=\"605543,123456\")"
+  ],
+  "input_schema": {
+    "type": "object",
+    "required": ["db", "id_list"],
+    "properties": {
+      "db": {
+        "type": "string",
+        "enum": ["gene", "snp", "omim"],
+        "description": "NCBI database name ('gene', 'snp', or 'omim')."
+      },
+      "id_list": {
+        "oneOf": [
+          {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          {
+            "type": "string"
+          }
+        ],
+        "description": "List of UIDs (array) or comma-separated UIDs (string)."
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "header": {
+        "type": "object",
+        "description": "ESummary header metadata."
+      },
+      "result": {
+        "type": "object",
+        "description": "A mapping from UID to its summary fields, plus a 'uids' list."
+      }
+    }
+  }
+}

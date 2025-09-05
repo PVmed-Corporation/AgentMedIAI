@@ -1,0 +1,46 @@
+{
+  "tool_name": "DeepBrainNet",
+  "tool_description": "DeepBrainNet is a deep learning model that predicts brain age from skull-stripped and aligned T1-weighted MRI scans. It uses a convolutional neural network trained on over 11,000 subjects from diverse populations.",
+  "tool_author": "Vishnu Bashyam et al.; reimplemented by ANTsPyNet",
+  "tool_version": "1.0",
+  "tool_url": "https://github.com/vishnubashyam/DeepBrainNet; https://github.com/ANTsX/ANTsPyNet",
+  "demo_commands": [
+    "python -c \"import ants; from antspynet.utilities import brain_age; img = ants.image_read('/path/to/image.nii.gz'); print(brain_age(img, do_preprocessing=False)['predicted_age'])\""
+  ],
+  "input_schema": {
+    "type": "object",
+    "required": ["image_path"],
+    "properties": {
+      "image_path": {
+        "type": "string",
+        "description": "Path to a skull-stripped, aligned T1-weighted MRI scan in NIfTI format."
+      },
+      "do_preprocessing": {
+        "type": "boolean",
+        "default": false,
+        "description": "Set to true if preprocessing (e.g., skull stripping, normalization) is needed. Otherwise, provide pre-aligned, skull-stripped images."
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "predicted_age": {
+        "type": "number",
+        "description": "The predicted biological brain age (in years) as output by the model."
+      }
+    }
+  },
+  "execution": {
+    "type": "python_one_liner",
+    "entrypoint_template": "python -c \"import ants; from antspynet.utilities import brain_age; img = ants.image_read('{image_path}'); print(brain_age(img, do_preprocessing={do_preprocessing})['predicted_age'])\""
+  },
+  "data_requirements": {
+    "format": "NIfTI",
+    "preprocessing": [
+      "Skull-stripped",
+      "Linearly registered (e.g., MNI space)"
+    ]
+  }
+}
+

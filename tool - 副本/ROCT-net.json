@@ -1,0 +1,28 @@
+{
+  "tool_name": "ROCT-Net",
+  "tool_description": "Ensemble CNN (DenseNet-169 + ResNet-50) for multi-class retinal disease classification on Kermany dataset; improves spatial-resolution learning.",
+  "tool_author": "Mohammad Rahimzadeh & Mahmoud R. Mohammadi",
+  "tool_version": "2021-ICCKE",
+  "tool_url": "https://github.com/mr7495/OCT-classification",
+  "demo_commands": [
+    "python ROCT_Net_Kermany_Dataset.ipynb  # run all cells",
+    "python infer_single.py --img path/to/Bscan.png --weights roct_best.h5"
+  ],
+  "input_schema": {
+    "type": "object",
+    "required": ["weights", "image"],
+    "properties": {
+      "weights": { "type": "string" },
+      "image": { "type": "string" }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "label": { "type": "string" },
+      "confidence": { "type": "number" }
+    }
+  },
+  "class_maps": { "0": "CNV", "1": "DME", "2": "DRUSEN", "3": "NORMAL" },
+  "license": "MIT"
+}

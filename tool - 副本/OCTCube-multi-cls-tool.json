@@ -1,0 +1,136 @@
+{
+  "tool_name": "OCTCube-M",
+  "tool_description": "OCTCube-M is a 3D multimodal optical coherence tomography foundation model for retinal and systemic diseases with cross-cohort and cross-device validation. It provides multi-task classification for 8 retinal diseases: AMD, DME, Glaucoma, DR, ERM, VD, CRV/AO, and RNV. The tool supports screening, classification, and disease prediction with confidence scores.",
+  "tool_author": "Zucks Liu et al.",
+  "tool_version": "1.0",
+  "tool_url": "https://github.com/ZucksLiu/OCTCubeM",
+
+  "input_schema": {
+    "type": "object",
+    "required": [
+      "input",
+      "output"
+    ],
+    "properties": {
+      "input": {
+        "type": "string",
+        "description": "Path to the input OCT volume file (.npy, .nii.gz) or directory containing OCT data."
+      },
+      "output": {
+        "type": "string",
+        "description": "Directory path where the classification results will be saved."
+      },
+      "task": {
+        "type": "string",
+        "enum": [
+          "multi_disease_classification",
+          "screening",
+          "single_disease_prediction"
+        ],
+        "default": "multi_disease_classification",
+        "description": "Type of analysis to perform on the OCT volume."
+      },
+      "diseases": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "AMD",
+            "DME", 
+            "Glaucoma",
+            "DR",
+            "ERM",
+            "VD",
+            "CRV/AO",
+            "RNV"
+          ]
+        },
+        "description": "Specific diseases to analyze. If not specified, all 8 diseases will be analyzed."
+      },
+      "confidence_threshold": {
+        "type": "number",
+        "minimum": 0.0,
+        "maximum": 1.0,
+        "default": 0.5,
+        "description": "Minimum confidence threshold for positive disease classification."
+      },
+      "export_probabilities": {
+        "type": "boolean",
+        "default": false,
+        "description": "Export raw probability scores for all disease classes."
+      },
+      "visualization": {
+        "type": "boolean",
+        "default": false,
+        "description": "Generate visualization of attention maps and prediction results."
+      },
+      "batch_processing": {
+        "type": "boolean",
+        "default": false,
+        "description": "Process multiple OCT volumes in batch mode."
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "classification_results": {
+        "type": "string",
+        "description": "Path to the JSON file containing disease classification results with confidence scores."
+      },
+      "probability_scores": {
+        "type": "string", 
+        "description": "Path to the file containing raw probability scores for all disease classes."
+      },
+      "visualization_files": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "List of file paths to generated attention maps and visualization images."
+      },
+      "summary_report": {
+        "type": "string",
+        "description": "Path to the summary report containing screening results and recommendations."
+      },
+      "processing_log": {
+        "type": "string",
+        "description": "Path to the processing log file with analysis details and timestamps."
+      }
+    }
+  },
+  "disease_classes": {
+    "AMD": {
+      "full_name": "Age-related Macular Degeneration",
+      "description": "Progressive retinal disease affecting central vision"
+    },
+    "DME": {
+      "full_name": "Diabetic Macular Edema", 
+      "description": "Fluid accumulation in the macula due to diabetes"
+    },
+    "Glaucoma": {
+      "full_name": "Glaucoma",
+      "description": "Optic nerve damage often associated with elevated intraocular pressure"
+    },
+    "DR": {
+      "full_name": "Diabetic Retinopathy",
+      "description": "Retinal damage caused by diabetes complications"
+    },
+    "ERM": {
+      "full_name": "Epiretinal Membrane",
+      "description": "Fibrous tissue growth on the retinal surface"
+    },
+    "VD": {
+      "full_name": "Vitreomacular Disorders",
+      "description": "Abnormal vitreoretinal interface conditions"
+    },
+    "CRV/AO": {
+      "full_name": "Central Retinal Vein/Artery Occlusion",
+      "description": "Blockage of central retinal blood vessels"
+    },
+    "RNV": {
+      "full_name": "Retinal Neovascularization", 
+      "description": "Abnormal new blood vessel growth in the retina"
+    }
+  }
+}

@@ -1,0 +1,155 @@
+{
+  "tool_name": "FactCheXcker CarinaNet",
+  "tool_description": "FactCheXcker CarinaNet is an AI-powered tool for automatic detection and localization of carina and endotracheal tube (ETT) positioning in chest X-rays. Part of the FactCheXcker framework designed to mitigate measurement hallucinations in radiology reports. The tool provides precise localization of ETT tips and carina with distance measurements for clinical positioning verification.",
+  "tool_author": "Alice Heiman, Xiaoman Zhang, Emma Chen, Sung Eun Kim, Pranav Rajpurkar",
+  "tool_version": "1.1.0",
+  "tool_url": "https://pypi.org/project/factchexcker-carinanet/1.1.0/",
+  "demo_commands": [
+    "python -c \"import carinanet; model = carinanet.CarinaNetModel() results = model.detect('/Users/zxm/Desktop/2025_FLARE/xray/data/xray.jpg'); print(f'ETT detected: {results[\\\"ett_detected\\\"]}, Distance: {results[\\\"distance\\\"]:.2f}mm')\"",
+    "python -c \"import carinanet; import cv2; model = carinanet.CarinaNetModel() image = cv2.imread('/Users/zxm/Desktop/2025_FLARE/xray/data/xray.jpg', cv2.IMREAD_GRAYSCALE); analysis = model.analyze_positioning(image); print(f'Status: {analysis[\\\"status\\\"]}, Distance: {analysis[\\\"distance_mm\\\"]:.1f}mm')\"",
+    "python -c \"import carinanet; model = carinanet.CarinaNetModel() results = model.detect_with_visualization('/Users/zxm/Desktop/2025_FLARE/xray/data/xray.jpg'); model.save_annotated_image(results, 'ett_carina_detection.png')\"",
+    "python -c \"import carinanet; model = carinanet.CarinaNetModel() report = model.generate_clinical_report('/Users/zxm/Desktop/2025_FLARE/xray/data/xray.jpg'); print(f'Position Assessment: {report[\\\"position_assessment\\\"]}')\""
+  ],
+  "input_schema": {
+    "type": "object",
+    "required": [
+      "image_path"
+    ],
+    "properties": {
+      "image_path": {
+        "type": "string",
+        "description": "Path to the input chest X-ray image file (DICOM, PNG, JPEG, or TIFF format)."
+      },
+      "output_dir": {
+        "type": "string",
+        "default": "./output",
+        "description": "Directory path where the detection results and visualizations will be saved."
+      },
+      "confidence_threshold": {
+        "type": "number",
+        "minimum": 0.0,
+        "maximum": 1.0,
+        "default": 0.5,
+        "description": "Confidence threshold for detection (0.0 to 1.0)."
+      },
+      "save_visualization": {
+        "type": "boolean",
+        "default": false,
+        "description": "Generate and save annotated visualization with bounding boxes."
+      },
+      "clinical_report": {
+        "type": "boolean",
+        "default": false,
+        "description": "Generate structured clinical report with positioning assessment."
+      },
+      "distance_unit": {
+        "type": "string",
+        "enum": [
+          "mm",
+          "cm",
+          "pixels"
+        ],
+        "default": "mm",
+        "description": "Unit for distance measurements."
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "ett_detected": {
+        "type": "boolean",
+        "description": "Whether endotracheal tube is detected in the image."
+      },
+      "carina_detected": {
+        "type": "boolean",
+        "description": "Whether carina (tracheal bifurcation) is detected in the image."
+      },
+      "ett_bbox": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        },
+        "minItems": 4,
+        "maxItems": 4,
+        "description": "Bounding box coordinates for ETT [x, y, width, height]."
+      },
+      "carina_bbox": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        },
+        "minItems": 4,
+        "maxItems": 4,
+        "description": "Bounding box coordinates for carina [x, y, width, height]."
+      },
+      "distance_mm": {
+        "type": "number",
+        "description": "Distance between ETT tip and carina in millimeters."
+      },
+      "positioning_status": {
+        "type": "string",
+        "enum": [
+          "Correct",
+          "Too High",
+          "Too Low",
+          "Uncertain"
+        ],
+        "description": "Clinical assessment of ETT positioning."
+      },
+      "ett_confidence": {
+        "type": "number",
+        "minimum": 0.0,
+        "maximum": 1.0,
+        "description": "Detection confidence score for ETT (0.0 to 1.0)."
+      },
+      "carina_confidence": {
+        "type": "number",
+        "minimum": 0.0,
+        "maximum": 1.0,
+        "description": "Detection confidence score for carina (0.0 to 1.0)."
+      },
+      "measurement_confidence": {
+        "type": "number",
+        "minimum": 0.0,
+        "maximum": 1.0,
+        "description": "Confidence score for distance measurement (0.0 to 1.0)."
+      },
+      "clinical_recommendations": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "List of clinical recommendations based on positioning assessment."
+      },
+      "visualization_path": {
+        "type": "string",
+        "description": "Path to saved annotated visualization image, if generated."
+      },
+      "processing_time": {
+        "type": "number",
+        "description": "Processing time in seconds."
+      }
+    }
+  },
+  "class_maps": {
+    "detection_classes": {
+      "1": "endotracheal_tube",
+      "2": "carina",
+      "3": "ett_tip",
+      "4": "tracheal_bifurcation"
+    },
+    "positioning_status": {
+      "1": "Correct",
+      "2": "Too High", 
+      "3": "Too Low",
+      "4": "Uncertain"
+    },
+    "clinical_significance": {
+      "Correct": "ETT positioned 5±2 cm above carina - optimal positioning",
+      "Too High": "ETT too far from carina - risk of accidental extubation",
+      "Too Low": "ETT too close to carina - risk of endobronchial intubation",
+      "Uncertain": "Insufficient image quality or unclear anatomical landmarks"
+    }
+  }
+} 

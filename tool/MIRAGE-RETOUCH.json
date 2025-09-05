@@ -1,0 +1,113 @@
+{
+  "tool_name": "MIRAGE-RETOUCH",
+  "tool_description": "MIRAGE-RETOUCH is a multimodal foundation model for retinal fluid segmentation in OCT images. It segments IRF (Intraretinal Fluid), SRF (Subretinal Fluid), and PED (Pigment Epithelial Detachment) lesions with high accuracy. The tool computes lesion areas and provides Dice scores when ground-truth masks are available.",
+  "tool_author": "José Morano et al.",
+  "tool_version": "1.0",
+  "tool_url": "https://github.com/j-morano/MIRAGE",
+  "docker_image": "zucksliu/octsegmentor-mirage-retouch",
+  "wrapper_script": "mirage_wrapper.py",
+  "license": "CC-BY-NC-ND 4.0",
+  "citation": "@article{morano2025mirage, title={MIRAGE: Multimodal foundation model and benchmark for comprehensive retinal OCT image analysis}, author={Morano, Jos{\\'e} and Fazekas, Botond and S{\\\"u}kei, Emese and Fecso, Ronald and Emre, Taha and Gumpinger, Markus and Faustmann, Georg and Oghbaie, Marzieh and Schmidt-Erfurth, Ursula and Bogunovi{\\'c}, Hrvoje}, journal={arXiv preprint arXiv:2506.08900}, year={2025}}",
+  "demo_commands": [
+    "docker run --rm --gpus all -v /path/to/input:/src/data/input -v /path/to/output:/src/data/output octsegmentor-mirage:latest --task RETOUCH",
+    "docker run --rm --gpus all -v /path/to/input:/src/data/input -v /path/to/output:/src/data/output octsegmentor-mirage:latest --task AROI"
+  ],
+  "input_schema": {
+    "type": "object",
+    "required": [ 
+      "input",
+      "output",
+      "task",
+      "features"
+    ],
+    "properties": {
+      "input": {
+        "type": "string",
+        "description": "Path to the input OCT B-scan image file (.png, .jpg, .tiff) or directory containing OCT B-scans."
+      },
+      "output": {
+        "type": "string",
+        "description": "Directory path where the fluid segmentation results will be saved."
+      },
+      "task": {
+        "type": "string",
+        "enum": [
+          "RETOUCH",
+          "AROI"
+        ],
+        "description": "Which Task to predict - the RETOUCH task or AROI Task."
+      }, 
+      "features": {
+        "type": "store-true",
+        "description": "If set, the model will only save the logits as npy files instead of generating segmentation masks and visualizations."
+      }
+    }
+      
+  },
+  "output_schema": {
+    "type": "n/a",
+    "description": "The output segmentation visuals will be saved in the specified output directory."
+  },
+
+  "retouch_class_types": {
+    "IRF": {
+      "full_name": "Intraretinal Fluid",
+      "description": "Fluid accumulation within the retinal layers, commonly seen in diabetic macular edema and retinal vein occlusion.",
+      "class_id": 1
+    },
+    "SRF": {
+      "full_name": "Subretinal Fluid", 
+      "description": "Fluid accumulation between the neurosensory retina and retinal pigment epithelium, often associated with AMD and central serous chorioretinopathy.",
+      "class_id": 2
+    },
+    "PED": {
+      "full_name": "Pigment Epithelial Detachment",
+      "description": "Detachment of the retinal pigment epithelium from Bruch's membrane due to fluid or material accumulation, specific to AMD.",
+      "class_id": 3
+    }
+  }, 
+
+  "aroi_class_types": {
+    "Above_ILM": {
+        "full_name": "Above Internal Limiting Membrane",
+        "description": "Structures or artifacts located above the internal limiting membrane, such as vitreous opacities or floaters.",
+        "class_id": 0
+    },
+    "ILM_IPL/INL": {
+        "full_name": "Internal Limiting Membrane to Inner Plexiform/Inner Nuclear Layers",
+        "description": "Retinal region spanning from the ILM through the IPL/INL, includes possible nerve fiber layer abnormalities.",
+        "class_id": 1
+    },
+    "IPL/INL_RPE": {
+        "full_name": "Inner Plexiform/Inner Nuclear Layers to Retinal Pigment Epithelium",
+        "description": "Main retinal body from IPL/INL down to the RPE, where most structural lesions like edema occur.",
+        "class_id": 2
+    },
+    "RPE_BM": {
+        "full_name": "Retinal Pigment Epithelium to Bruch's Membrane",
+        "description": "Zone between the RPE and Bruch’s membrane, critical for assessing AMD-related changes.",
+        "class_id": 3
+    },
+    "Under_BM": {
+        "full_name": "Under Bruch's Membrane",
+        "description": "Region below Bruch's membrane, important for identifying choroidal neovascularization.",
+        "class_id": 4
+    },
+    "Cyst": {
+        "full_name": "Intraretinal Cyst",
+        "description": "Cystic fluid pockets within the retinal layers, often indicating macular edema.",
+        "class_id": 5
+    },
+    "PED": {
+        "full_name": "Pigment Epithelial Detachment",
+        "description": "Separation of the retinal pigment epithelium from Bruch's membrane, hallmark of wet AMD.",
+        "class_id": 6
+    },
+    "SRF": {
+        "full_name": "Subretinal Fluid",
+        "description": "Fluid accumulation between the neurosensory retina and the RPE, seen in various exudative conditions.",
+        "class_id": 7
+    }
+}
+
+}

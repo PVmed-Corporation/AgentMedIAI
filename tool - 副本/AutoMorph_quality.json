@@ -1,0 +1,73 @@
+{
+  "tool_name": "AutoMorph_quality",
+  "tool_description": "AutoMorph_quality is a Docker-based tool for automated quality control of retinal fundus images. It evaluates image quality based on softmax outputs and standard deviation, and filters images using user-defined thresholds.",
+  "tool_author": "Yukun Zhou",
+  "tool_version": "latest",
+  "tool_url": "https://hub.docker.com/r/yukunzhou/automorph-quality",
+  "demo_commands": [
+    "docker pull yukunzhou/automorph-quality:latest",
+    "docker run --rm -v /path/to/input:/app/AutoMorph/input -v /path/to/output:/app/AutoMorph/output yukunzhou/automorph-quality:latest --bad_mean_threshold 0.2 --usable_sd_threshold 0.1",
+    "docker run --rm -v /path/to/input:/app/AutoMorph/input -v /path/to/output:/app/AutoMorph/output yukunzhou/automorph-quality:latest"
+  ],
+  "input_schema": {
+    "type": "object",
+    "required": ["input", "output"],
+    "properties": {
+      "input": {
+        "type": "string",
+        "description": "Path to the input folder containing retinal fundus images (e.g., PNG or JPG format)."
+      },
+      "output": {
+        "type": "string",
+        "description": "Path to the output folder where the quality assessment results will be saved."
+      },
+      "bad_mean_threshold": {
+        "type": "number",
+        "default": 0.2,
+        "description": "Threshold for mean softmax probability of 'bad' quality. Images with a 'bad' score above this value may be excluded."
+      },
+      "usable_sd_threshold": {
+        "type": "number",
+        "default": 0.1,
+        "description": "Threshold for standard deviation of 'usable' quality. Images with high uncertainty may be excluded."
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "quality_results_csv": {
+        "type": "string",
+        "description": "Path to the output CSV file containing quality scores and predicted labels for each image."
+      },
+      "filtered_images_folder": {
+        "type": "string",
+        "description": "Path to the folder containing only images that passed the quality filter."
+      }
+    },
+    "csv_format": {
+      "columns": [
+        "Name",
+        "softmax_good",
+        "softmax_usable",
+        "softmax_bad",
+        "good_sd",
+        "usable_sd",
+        "bad_sd",
+        "raw_Prediction",
+        "Prediction"
+      ],
+      "description": {
+        "Name": "Image file name",
+        "softmax_good": "Softmax probability for 'good' quality",
+        "softmax_usable": "Softmax probability for 'usable' quality",
+        "softmax_bad": "Softmax probability for 'bad' quality",
+        "good_sd": "Standard deviation for 'good' prediction",
+        "usable_sd": "Standard deviation for 'usable' prediction",
+        "bad_sd": "Standard deviation for 'bad' prediction",
+        "raw_Prediction": "Raw class output (0: good, 1: usable, 2: bad)",
+        "Prediction": "Final predicted quality class"
+      }
+    }
+  }
+}

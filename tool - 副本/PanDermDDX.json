@@ -1,0 +1,73 @@
+{
+  "tool_name": "PanDermDDX",
+  "tool_description": "PanDermDDX provides differential diagnoses of 23 common skin conditions for a clinical skin image. By default it outputs a single best diagnosis. Use --top3ddx or --top5ddx to return the top-3 or top-5 ranked diseases with confidence scores.",
+  "tool_author": "Siyuan Yan",
+  "tool_version": "latest",
+  "tool_url": "https://github.com/SiyuanYan1/PanDerm",
+  "demo_commands": [
+    "docker run --rm --gpus all \\\n  -v /home/pathto/Dermnet:/data \\\n  pandermddx \\\n  python infer.py --image_path /data/imagesTs/sample.jpg --output single_result.txt",
+    "docker run --rm --gpus all \\\n  -v /home/pathto/Dermnet:/data \\\n  pandermddx \\\n  python infer.py --image_path /data/imagesTs/sample.jpg --output top3_result.txt --top3ddx",
+    "docker run --rm --gpus all \\\n  -v /home/pathto/Dermnet:/data \\\n  pandermddx \\\n  python infer.py --image_path /data/imagesTs/sample.jpg --output top5_result.txt --top5ddx"
+  ],
+  "input_schema": {
+    "type": "object",
+    "required": ["image_path", "output"],
+    "properties": {
+      "image_path": {
+        "type": "string",
+        "description": "Absolute path to a clinical skin image (PNG/JPG)."
+      },
+      "output": {
+        "type": "string",
+        "description": "Destination path for the TXT result file."
+      },
+      "top3ddx": {
+        "type": "boolean",
+        "default": false,
+        "description": "If true, returns the top-3 ranked diagnoses."
+      },
+      "top5ddx": {
+        "type": "boolean",
+        "default": false,
+        "description": "If true, returns the top-5 ranked diagnoses."
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "results_txt": {
+        "type": "string",
+        "description": "Path to the TXT file containing predicted diseases and probabilities."
+      }
+    },
+    "txt_format": {
+      "description": "• Single diagnosis: one line '<disease>: <probability>'\n• Top-N: N lines '<rank>. <disease>: <probability>'"
+    }
+  },
+  "class_maps": {
+    "0":  "light_diseases_and_disorders_of_pigmentation",
+    "1":  "acne_and_rosacea_photos",
+    "2":  "warts_molluscum_and_other_viral_infections",
+    "3":  "seborrheic_keratoses_and_other_benign_tumors",
+    "4":  "cellulitis_impetigo_and_other_bacterial_infections",
+    "5":  "poison_ivy_photos_and_other_contact_dermatitis",
+    "6":  "vasculitis_photos",
+    "7":  "urticaria_hives",
+    "8":  "melanoma_skin_cancer_nevi_and_moles",
+    "9":  "eczema_photos",
+    "10": "herpes_hpv_and_other_stds_photos",
+    "11": "scabies_lyme_disease_and_other_infestations_and_bites",
+    "12": "tinea_ringworm_candidiasis_and_other_fungal_infections",
+    "13": "actinic_keratosis_basal_cell_carcinoma_and_other_malignant_lesions",
+    "14": "atopic_dermatitis_photos",
+    "15": "lupus_and_other_connective_tissue_diseases",
+    "16": "psoriasis_pictures_lichen_planus_and_related_diseases",
+    "17": "nail_fungus_and_other_nail_disease",
+    "18": "exanthems_and_drug_eruptions",
+    "19": "hair_loss_photos_alopecia_and_other_hair_diseases",
+    "20": "systemic_disease",
+    "21": "vascular_tumors",
+    "22": "bullous_disease_photos"
+  }
+}

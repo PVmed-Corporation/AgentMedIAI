@@ -1,0 +1,194 @@
+{
+    "tool_name": "ChestXRayAnatomySegmentation",
+    "tool_description": "ChestXRayAnatomySegmentation (CXAS) is a sophisticated tool for accurate fine-grained segmentation of human anatomy in chest radiographs. It uses volumetric pseudo-labeling techniques with CT projection to achieve detailed anatomical segmentation without manual annotation. The tool can segment 157 different anatomical structures and extract clinically relevant features like Cardio-Thoracic Ratio (CTR) and Spine-Center Distance (SCD).",
+    "tool_author": "Constantin Marc Seibold et al.",
+    "tool_version": "1.0.0",
+    "tool_url": "https://github.com/ConstantinSeibold/ChestXRayAnatomySegmentation",
+    "demo_commands": [
+        "# Basic chest X-ray anatomy segmentation\ncxas_segment -i ../data/xray.jpg -o ../output/ -ot png -g 0",
+        
+        "# Segment with multiple output formats\ncxas_segment -i ../data/xray.jpg -o ../output/ -ot dicom-seg -g cpu -m UNet_ResNet50_default",
+        
+        "# Extract anatomical features (CTR, SCD)\ncxas_feat_extract -i ../data/xray.jpg -o ../output/ -f \"CTR\" \"SCD\" -g cpu -s",
+        
+        "# Extract Cardio-Thoracic Ratio\ncxas_feat_extract -i ../data/ -o ../output/ -f \"Cardio-Thoracic Ratio\" -ot csv -g 0 -s True",
+        
+        "# Comprehensive processing with segmentation and feature extraction\ncxas -i ../data/ -o ../output/ --mode extract -f \"CTR\" \"SCD\" \"Spine-Center Distance\" -ot png -g cpu -s",
+        
+        "# Batch processing directory\ncxas_segment -i ../data/ -o ../output/ -ot npz -g 0"
+    ],
+    "input_schema": {
+        "type": "object",
+        "required": [
+            "input",
+            "output"
+        ],
+        "properties": {
+            "input": {
+                "type": "string",
+                "description": "Path to input chest X-ray image file (.jpg, .png, .dcm) or directory containing multiple images."
+            },
+            "output": {
+                "type": "string",
+                "description": "Output directory path where segmentation masks and/or features will be saved."
+            },
+            "mode": {
+                "type": "string",
+                "enum": ["segment", "extract"],
+                "default": "segment",
+                "description": "Processing mode: 'segment' for anatomical segmentation, 'extract' for feature extraction."
+            },
+            "output_type": {
+                "type": "string",
+                "enum": ["json", "npy", ".npz", "jpg", "png", "dicom-seg", "csv"],
+                "default": "png",
+                "description": "Output format for segmentation masks or features."
+            },
+            "features": {
+                "type": "array",
+                "items": {
+                    "type": "string",
+                    "enum": ["SCD", "CTR", "Spine-Center Distance", "Cardio-Thoracic Ratio"]
+                },
+                "description": "List of anatomical features to extract (required if mode is 'extract')."
+            },
+            "gpus": {
+                "type": "string",
+                "default": "0",
+                "description": "GPU device to use for processing. Use 'cpu' for CPU-only processing."
+            },
+            "model": {
+                "type": "string",
+                "enum": ["UNet_ResNet50_default"],
+                "default": "UNet_ResNet50_default",
+                "description": "Segmentation model to use for inference."
+            },
+            "store_seg": {
+                "type": "boolean",
+                "default": false,
+                "description": "Whether to store segmentation masks when extracting features."
+            }
+        }
+    },
+    "output_schema": {
+        "type": "object",
+        "properties": {
+            "segmentation_masks": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "description": "Paths to generated anatomical segmentation masks for each anatomical structure."
+            },
+            "feature_file": {
+                "type": "string",
+                "description": "Path to CSV file containing extracted anatomical features (CTR, SCD, etc.)."
+            },
+            "anatomical_structures": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "description": "List of segmented anatomical structures (up to 157 different structures)."
+            },
+            "clinical_measurements": {
+                "type": "object",
+                "properties": {
+                    "cardio_thoracic_ratio": {
+                        "type": "number",
+                        "description": "Calculated Cardio-Thoracic Ratio (CTR) value."
+                    },
+                    "spine_center_distance": {
+                        "type": "number",
+                        "description": "Calculated Spine-Center Distance (SCD) value."
+                    }
+                },
+                "description": "Extracted clinical measurements and anatomical features."
+            },
+            "processing_info": {
+                "type": "object",
+                "properties": {
+                    "model_used": {
+                        "type": "string",
+                        "description": "Name of the segmentation model used."
+                    },
+                    "processing_time": {
+                        "type": "number",
+                        "description": "Time taken for processing in seconds."
+                    },
+                    "device_used": {
+                        "type": "string",
+                        "description": "Computing device used (GPU/CPU)."
+                    }
+                }
+            }
+        }
+    },
+    "anatomical_structures": [
+        "Heart",
+        "Left Lung",
+        "Right Lung",
+        "Spine",
+        "Ribs",
+        "Clavicles",
+        "Sternum",
+        "Diaphragm",
+        "Mediastinum",
+        "Pleural Space",
+        "Cardiac Silhouette",
+        "Thoracic Vertebrae",
+        "Costal Cartilages",
+        "Pulmonary Vessels",
+        "Bronchi"
+    ],
+    "clinical_features": {
+        "CTR": {
+            "name": "Cardio-Thoracic Ratio",
+            "description": "Ratio of cardiac width to thoracic width, used to assess cardiomegaly",
+            "normal_range": "< 0.5",
+            "units": "ratio"
+        },
+        "SCD": {
+            "name": "Spine-Center Distance",
+            "description": "Distance from spine to the center of thoracic cavity",
+            "units": "pixels/mm"
+        },
+        "Spine-Center Distance": {
+            "name": "Spine-Center Distance",
+            "description": "Anatomical measurement for alignment assessment",
+            "units": "measurement units"
+        }
+    },
+    "supported_formats": {
+        "input": [".jpg", ".png", ".dcm"],
+        "output": [".json", ".npy", ".npz", ".jpg", ".png", ".dicom-seg", ".csv"]
+    },
+    "docker_support": {
+        "interactive": "cseibold/cxas:interactive",
+        "cli": "cseibold/cxas:cli",
+        "build_command": "docker build -t cxas .",
+        "interactive_command": "docker run -p 8501:8501 cseibold/cxas:interactive",
+        "cli_command": "docker run --rm -v /path/to/input:/app/input -v /path/to/output:/app/output cseibold/cxas:cli -i /app/input -o /app/output --mode segment -g cpu -s"
+    },
+    "technical_details": {
+        "methodology": "Volumetric pseudo-labeling with CT projection",
+        "dataset_size": "10,021 thoracic CTs with 157 labels",
+        "model_architecture": "UNet with ResNet50 backbone",
+        "agreement_scores": {
+            "frontal_miou": 0.93,
+            "lateral_miou": 0.85,
+            "inter_annotator_frontal": 0.95,
+            "inter_annotator_lateral": 0.83
+        }
+    },
+    "installation_requirements": {
+        "python": ">=3.7",
+        "pytorch": ">=1.7.0",
+        "torchvision": ">=0.8.0",
+        "numpy": ">=1.19.0",
+        "opencv": ">=4.0.0",
+        "scikit-image": ">=0.17.0",
+        "streamlit": ">=1.0.0",
+        "pydicom": ">=2.0.0"
+    }
+} 

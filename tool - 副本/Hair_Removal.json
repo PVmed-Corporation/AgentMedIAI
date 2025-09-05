@@ -1,0 +1,42 @@
+{
+  "tool_name": "HairRemoval",
+  "tool_description": "HairRemoval eliminates hair artifacts from dermoscopic images via morphological filtering and inpainting. Optionally, it can output a binary hair mask.",
+  "tool_author": "Siyuan Yan",
+  "tool_version": "latest",
+  "tool_url": "https://github.com/panderm/hairremoval",
+  "demo_commands": [
+    "docker run --rm --gpus all \n  -v /home/pathto/SDDI:/data \n  hair_removal \n  python hair_removal.py /data/imagesTs/ISIC_0547983.jpg -o out_dir"
+  ],
+  "input_schema": {
+    "type": "object",
+    "required": ["input_image", "output_dir"],
+    "properties": {
+      "input_image": {
+        "type": "string",
+        "description": "Absolute path to the dermoscopic image (PNG/JPG) containing hairs."
+      },
+      "output_dir": {
+        "type": "string",
+        "description": "Directory where the cleaned image (and optional mask) will be saved."
+      },
+      "save_mask": {
+        "type": "boolean",
+        "default": false,
+        "description": "If true, also saves a binary hair mask in the output directory."
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "clean_image_png": {
+        "type": "string",
+        "description": "Path to the image with hairs removed."
+      },
+      "hair_mask_png": {
+        "type": "string",
+        "description": "(If requested) Path to the binary hair mask (1 = hair, 0 = background)."
+      }
+    }
+  }
+}

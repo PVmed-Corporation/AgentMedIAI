@@ -1,0 +1,28 @@
+{
+  "tool_name": "Deep-RPD-Net",
+  "tool_description": "3-D CNN (TensorFlow 2.8) for binary detection of reticular pseudodrusen (RPD) in spectral-domain OCT cubes.",
+  "tool_author": "Amr Elsawy et al.",
+  "tool_version": "1.0",
+  "tool_url": "https://github.com/ncbi-nlp/Deep-RPD-Net",
+  "demo_commands": [
+    "git clone https://github.com/ncbi-nlp/Deep-RPD-Net.git",
+    "python classify_data.py Models/ my_scans/ pred.csv"
+  ],
+  "input_schema": {
+    "type": "object",
+    "required": ["model_folder", "scan_folder", "output_csv"],
+    "properties": {
+      "model_folder": { "type": "string", "description": "Path to folder with saved *.h5 models." },
+      "scan_folder": { "type": "string", "description": "Folder with one sub-folder per OCT cube (128 B-scans each)." },
+      "output_csv": { "type": "string", "description": "Destination CSV file for predictions." }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "prediction_csv": { "type": "string", "description": "CSV: scan_id, prob_RPD, label (0/1)." }
+    }
+  },
+  "class_maps": { "0": "no_rpd", "1": "rpd" },
+  "license": "Basic Keras + TensorFlow (repo contains NIH disclaimer, research-only)."
+}

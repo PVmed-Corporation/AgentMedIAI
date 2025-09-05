@@ -1,0 +1,133 @@
+{
+    "tool_name": "ultradetector",
+    "tool_description": "ultradetector is a medical ultrasound image detection tool based on YOLOv11, supporting multiple organ and lesion detection tasks, including the identification and localization of structures such as the heart, breast, thyroid, carotid artery, and fetus.",
+    "tool_author": "Xin Yang, Junxuan Yu, Yongsong Zhou, Tong Han, Zhiyuan Zhu, Tong Zhang, Jiongquan Chen",
+    "tool_version": "0.2.1",
+    "tool_url": "",
+    "demo_commands": [
+        "ultradetector -i input_dir -o output_dir -t Breast_Nodule -d gpu",
+        "ultradetector.py -i input_file.jpg -o output_dir -t Fetal_Head -d cpu",
+        "ultradetecto.py -i input_dir -o output_dir -t Thyroid_Nodule -d gpu:0"
+    ],
+    "input_schema": {
+        "type": "object",
+        "required": [
+            "input",
+            "output",
+            "task"
+        ],
+        "properties": {
+            "input": {
+                "type": "string",
+                "description": "Input file or directory path (must be a valid existing path)"
+            },
+            "output": {
+                "type": "string",
+                "description": "Output directory path (prediction results will be saved under output_dir/predict)"
+            },
+            "task": {
+                "type": "string",
+                "enum": [
+                    "CAMUS_Left_Heart",
+                    "Four_Chamber_Heart",
+                    "Breast_Nodule",
+                    "Carotid_Artery",
+                    "Fetal_Abdomen",
+                    "Fetal_Head",
+                    "Fetal_NT",
+                    "Thyroid_Gland",
+                    "Thyroid_Nodule"
+                ],
+                "description": "Detection task name"
+            },
+            "device": {
+                "type": "string",
+                "description": "Computation device. Options: 'gpu', 'cpu', 'mps' or 'gpu:X' (X is GPU ID)",
+                "default": "gpu"
+            }
+        }
+    },
+    "output_schema": {
+        "type": "object",
+        "properties": {
+            "prediction_directory": {
+                "type": "string",
+                "description": "Root directory for prediction results: {output_dir}/predict"
+            },
+            "labels_folder": {
+                "type": "string",
+                "description": "Folder containing detection labels: {output_dir}/predict/labels"
+            },
+            "visualization_folder": {
+                "type": "string",
+                "description": "Folder containing visualized results with bounding boxes: {output_dir}/predict/vis"
+            },
+            "detection_labels": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "description": "List of file paths to detection label text files (e.g., {output_dir}/predict/labels/*.txt)"
+            },
+            "detection_visualizations": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "description": "List of file paths to visualized images with bounding boxes (e.g., {output_dir}/predict/vis/*.jpg)"
+            }
+        }
+    },
+    "class_maps": {
+        "CAMUS_Left_Heart": {
+            "0": "LV",
+            "1": "Myo",
+            "2": "LA"
+        },
+        "Four_Chamber_Heart": {
+            "0": "LV",
+            "1": "LA",
+            "2": "RA",
+            "3": "RV"
+        },
+        "Breast_Nodule": {
+            "0": "Breast_Nodule"
+        },
+        "Carotid_Artery": {
+            "0": "Carotid_Artery"
+        },
+        "Fetal_Abdomen": {
+            "0": "liver",
+            "1": "artery",
+            "2": "vein",
+            "3": "stomach"
+        },
+        "Fetal_Head": {
+            "0": "LV",
+            "1": "CSP",
+            "2": "Brain"
+        },
+        "Fetal_NT": {
+            "0": "Maxilla",
+            "1": "Mandible",
+            "2": "LV",
+            "3": "Head",
+            "4": "RBP",
+            "5": "DP",
+            "6": "thalami",
+            "7": "plate",
+            "8": "IT",
+            "9": "CM",
+            "10": "midbrain",
+            "11": "NT",
+            "12": "NTAPS",
+            "13": "NB"
+        },
+        "Thyroid_Gland": {
+            "0": "Thyroid_Gland"
+        },
+        "Thyroid_Nodule": {
+            "0": "Thyroid_Nodule"
+        }
+    }
+}

@@ -1,0 +1,46 @@
+{
+  "tool_name": "DermLipDDX",
+  "tool_description": "DermLipDDX performs large-scale differential diagnosis for clinical skin images. Trained on the Derm1M with knowledge-enhanced vision–language pre-training (MAKE), it can return a single best diagnosis, the top-3, or the top-5 ranked skin-condition labels—covering hundreds of diseases.",
+  "tool_author": "Siyuan Yan",
+  "tool_version": "latest",
+  "tool_url": "https://github.com/SiyuanYan1/MAKE",
+  "demo_commands": [
+    "docker run --rm --gpus all \n  -v /home/pathto/F17K:/data \n  dermlip_ddx \n  --image_path /data/imagesTs/example.jpg",
+    "docker run --rm --gpus all \n  -v /home/pathto/F17K:/data \n  dermlip_ddx \n  --image_path /data/imagesTs/example.jpg --top3ddx",
+    "docker run --rm --gpus all \n  -v /home/pathto/F17K:/data \n  dermlip_ddx \n  --image_path /data/imagesTs/example.jpg --top5ddx"
+  ],
+  "input_schema": {
+    "type": "object",
+    "required": ["image_path"],
+    "properties": {
+      "image_path": {
+        "type": "string",
+        "description": "Absolute path to a clinical skin image (PNG/JPG)."
+      },
+      "top3ddx": {
+        "type": "boolean",
+        "default": false,
+        "description": "If true, returns the top-3 ranked differential diagnoses."
+      },
+      "top5ddx": {
+        "type": "boolean",
+        "default": false,
+        "description": "If true, returns the top-5 ranked differential diagnoses."
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "predictions_stdout": {
+        "type": "string",
+        "description": "Console (stdout) output listing the predicted label(s) with confidence scores."
+      }
+    },
+    "txt_format": {
+      "description": "• Single prediction: one line '<disease>: <probability>'\n• Top-N: N lines '<rank>. <disease>: <probability>'"
+    }
+  },
+  "license": "CC-BY-NC-ND 4.0",
+  "citation": "@misc{yan2025makemultiaspectknowledgeenhancedvisionlanguage,\n  title={MAKE: Multi-Aspect Knowledge-Enhanced Vision-Language Pretraining for Zero-shot Dermatological Assessment},\n  author={Siyuan Yan and Xieji Li and Ming Hu and Yiwen Jiang and Zhen Yu and Zongyuan Ge},\n  year={2025},\n  eprint={2505.09372},\n  archivePrefix={arXiv},\n  primaryClass={cs.CV},\n  url={https://arxiv.org/abs/2505.09372}\n}\n\n@misc{yan2025derm1mmillionscalevisionlanguagedataset,\n  title={Derm1M: A Million-scale Vision-Language Dataset Aligned with Clinical Ontology Knowledge for Dermatology},\n  author={Siyuan Yan and Ming Hu and Yiwen Jiang and Xieji Li and Hao Fei and Philipp Tschandl and Harald Kittler and Zongyuan Ge},\n  year={2025},\n  eprint={2503.14911},\n  archivePrefix={arXiv},\n  primaryClass={cs.CV},\n  url={https://arxiv.org/abs/2503.14911}\n}"
+}
