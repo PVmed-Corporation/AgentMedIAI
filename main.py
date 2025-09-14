@@ -1,77 +1,82 @@
-from pathlib import Path
-from typing import Dict, Any
-import json
+import concurrent.futures
+from planning_agent import PlanningAgent
+from tool_call_agent import ToolCallAgent
+from tool_invoke import ToolInvoker
 from zai import ZhipuAiClient
-from generate_tool_info import build_tools_prompt
-from retriever import ToolRetriever
+from pathlib import Path
+import json
 import os
 
-SYSTEM_PROMPT = """
-You are an AI agent that translates user queries into executable tool calls.
-You will be given:
-1. A user query describing a task.
-2. A list of available tools with their descriptions, demo commands, and schemas.
+def run_subtask(task, tools_path, max_retries=5):
+    tool_call_agent = ToolCallAgent()
+    tool_invoker = ToolInvoker()
+    sub_query = task["sub_query"]
+    input_path = Path(task["input_path"])
+    output_path = Path(task["output_path"])
+    attempt = 0
+    result = None
+    tool_call_json = None
+    while attempt < max_retries:
+        tool_call_json = tool_call_agent.run(sub_query, tools_path, input_path, output_path)
+        result = tool_invoker.invoke(tool_call_json)
+        if result.get("status") == "success":
+            break
+        attempt += 1
+        # 失败时将错误信息反馈给 ToolCallAgent（可扩展为更智能的提示）
+        sub_query += f"\nTool invocation error: {result.get('stderr', '')}"
+    return {
+        "tool_name": tool_call_json.get("tool_name"),
+        "command": tool_call_json.get("command"),
+        "result": result,
+        "sub_query": sub_query,
+        "input_path": str(input_path),
+        "output_path": str(output_path),
+        "attempts": attempt + 1
+    }
 
-### Your task:
-Generate a JSON output in the following schema:
-{
-  "tool_name": "Name of the selected tool.",
-  "explanation": "A short human-readable explanation of what the tool call will do.",
-  "command": "The exact command string to run, either as a Python call or as a Linux CLI command."
-}
+def main():
+    tools_path = "tools.json"
+    input_path = "/data/result/yilinyou/00000001_000.png"
+    result_path = "/data/result/yilinyou/CXAS_result/"
+    query = input("请输入指令：")
+    planning_agent = PlanningAgent()
+    plan = planning_agent.run(query, input_path, result_path)
+    tasks = plan.get("tasks", [])
+    results = []
 
-### Rules for deciding "command" format:
-1. If the tool provides demo commands, docker commands, or examples with flags like `-i`, `-o`, `--mode`, then assume the tool is a **CLI tool**.
-   - In this case, output the `command` field as a **Linux CLI string** (e.g., `cxas_feat_extract -i input.png -o output_dir -f CTR`).
-   - Follow the exact CLI syntax shown in the tool’s demo commands.
-   - Do not invent parameters.
-   - If an argument value contains spaces (e.g., Cardio-Thoracic Ratio), wrap it in single quotes `'...'`.
-   - Never wrap arguments in double quotes (`"..."`) unless explicitly required by the tool — use single quotes instead.
-   - Always use Linux-style paths with forward slashes (`/`), not Windows-style backslashes (`\\`).
-   - Always choose argument values from the tool’s allowed options.
-2. If the tool does not provide CLI examples but only a Python API or function signature, assume it is a **Python tool**.
-   - In this case, output the `command` field as a **Python function call string** (e.g., `CTRCalculator(input="...", output="...")`).
-3. Always respect the input/output schema provided with the tool.
-   - Fill in required parameters (like input/output paths).
-   - Use default values if specified.
-   - Only include optional parameters if relevant.
-4. Only output valid JSON that can be parsed with `json.loads()`.
-   - Do not include any text, comments, or explanations outside of the JSON object.
-"""
+    # 并行执行所有子任务
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = [
+            executor.submit(run_subtask, task, tools_path)
+            for task in tasks
+        ]
+        for future in concurrent.futures.as_completed(futures):
+            results.append(future.result())
 
+    # 汇总所有工具、命令、结果，生成自然语言描述
+    summary = "工具调用结果如下：\n"
+    for r in results:
+        summary += (
+            f"子任务: {r['sub_query']}\n"
+            f"工具: {r['tool_name']}\n"
+            f"命令: {r['command']}\n"
+            f"结果: {json.dumps(r['result'], ensure_ascii=False)}\n"
+            f"尝试次数: {r['attempts']}\n"
+            "----------------------\n"
+        )
 
-def run_agent(query: str, tools_path: str, input_path: Path, result_path: Path) -> Dict[str, Any]:
-    # 1. 检索可用工具
-    retriever = ToolRetriever()
-    selected = retriever.prompt_based_retrieval(query, tools_path)
-
-    # 2. 构造工具提示词
-    tools_prompt = build_tools_prompt(selected, "tool")
-
-    # 3. 调用大模型
+    # 用 GLM4.5 总结
     client = ZhipuAiClient(api_key=os.environ.get("API_KEY"))
-
     response = client.chat.completions.create(
         model="glm-4.5",
         temperature=0.3,
         messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": f"User query: {query}\n\nAvailable tools:\n{json.dumps(tools_prompt, indent=2)}\n\nInput path: {input_path}\nResult path: {result_path}"}
-        ],
-        response_format={"type": "json_object"}
+            {"role": "system", "content": "请用自然语言总结以下工具调用过程和结果。"},
+            {"role": "user", "content": summary}
+        ]
     )
-
-    # 4. 解析 JSON
-    result = json.loads(response.choices[0].message.content)
-    return result
-
+    print("=== 汇总结果 ===")
+    print(response.choices[0].message.content)
 
 if __name__ == "__main__":
-    tools_path = "tools.json"
-    input_path = Path("/data/result/yilinyou/00000001_000.png")
-    result_path = Path("/data/result/yilinyou/CXAS_result/")
-    query = "I want to get this X-ray image's anatomy segmentation"
-    result = run_agent(query, tools_path, input_path, result_path)
-
-    # 打印结果
-    print(json.dumps(result, ensure_ascii=False, indent=2))
+    main()
