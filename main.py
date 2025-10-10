@@ -6,24 +6,45 @@ from zai import ZhipuAiClient
 from pathlib import Path
 import json
 import os
+from generate_tool_info import build_tools_prompt
+from retriever import ToolRetriever
 
-def run_subtask(task, tools_path, max_retries=5):
+def run_subtask(task, tools_path, max_retries=2):
     tool_call_agent = ToolCallAgent()
     tool_invoker = ToolInvoker()
     sub_query = task["sub_query"]
-    input_path = Path(task["input_path"])
-    output_path = Path(task["output_path"])
+    #有些任务不需要输入输出路径
+    input_path = Path(task["input_path"]) if task.get("input_path") else None
+    output_path = Path(task["output_path"]) if task.get("output_path") else None
     attempt = 0
     result = None
     tool_call_json = None
+    error_msg = ""
+    """
+    tool_call_json schema:
+    {
+      "tool_name
+      "explanation"
+      "command_type"
+      "command": 
+    }
+    """
+    retriever = ToolRetriever()
+    selected = retriever.prompt_based_retrieval(sub_query, tools_path)
+    tools_prompt = build_tools_prompt(selected, "tool")
+
     while attempt < max_retries:
-        tool_call_json = tool_call_agent.run(sub_query, tools_path, input_path, output_path)
+        tool_call_json = tool_call_agent.run(sub_query, input_path, output_path,tools_prompt, bug=(attempt > 0), error_msg=error_msg)
+        print("********command**********")
+        print(json.dumps(tool_call_json, indent=4))
         result = tool_invoker.invoke(tool_call_json)
         if result.get("status") == "success":
             break
         attempt += 1
-        # 失败时将错误信息反馈给 ToolCallAgent（可扩展为更智能的提示）
-        sub_query += f"\nTool invocation error: {result.get('stderr', '')}"
+        # 失败时将错误信息反馈给 ToolCallAgent（可扩展为更智能的提示:日志系统）
+        error_msg = (result.get("stderr", "") if result else "")
+        print(f"Attempt {attempt} failed with error: {error_msg}")
+        print("retrying...")
     return {
         "tool_name": tool_call_json.get("tool_name"),
         "command": tool_call_json.get("command"),
@@ -41,6 +62,8 @@ def main():
     query = input("请输入指令：")
     planning_agent = PlanningAgent()
     plan = planning_agent.run(query, input_path, result_path)
+    print("=== 任务分解 ===")
+    print(plan)
     tasks = plan.get("tasks", [])
     results = []
 

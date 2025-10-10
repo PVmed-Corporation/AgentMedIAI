@@ -2,8 +2,8 @@ from pathlib import Path
 from typing import Dict, Any
 import json
 from zai import ZhipuAiClient
-from generate_tool_info import build_tools_prompt
-from retriever import ToolRetriever
+
+
 import os
 
 SYSTEM_PROMPT = """
@@ -17,7 +17,8 @@ Generate a JSON output in the following schema:
 {
   "tool_name": "Name of the selected tool.",
   "explanation": "A short human-readable explanation of what the tool call will do.",
-  "command": "The exact command string to run, either as a Python call or as a Linux CLI command."
+  "command_type": "One of 'cli', 'python', or 'docker'.",
+  "command": "The exact command string to run, either as a Python call, a Linux CLI command, or a docker command."
 }
 
 ### Rules for deciding "command" format:
@@ -38,6 +39,31 @@ Generate a JSON output in the following schema:
 4. Only output valid JSON that can be parsed with `json.loads()`.
    - Do not include any text, comments, or explanations outside of the JSON object.
 """
+DEBUG_SYSTEM_PROMPT = """
+You are now in DEBUG MODE.
+
+The last tool call failed. Analyze the cause and generate a corrected tool call JSON.
+
+You will be given:
+1. The previous failed command.
+2. The observed error message (if any).
+3. The available tool list remains the same.
+
+### Your task:
+Return the corrected JSON in the same schema.
+If the error message provides usage information or indicates the expected format, you MUST modify the command strictly following that guidance. 
+Use the error details to identify and correct missing parameters, incorrect field names, or invalid syntax.
+
+Example:
+{
+  "tool_name": "Name of the selected tool.",
+  "explanation": "A short human-readable explanation of what the tool call will do.",
+  "command_type": "One of 'cli', 'python', or 'docker'.",
+  "command": "The exact command string to run, either as a Python call, a Linux CLI command, or a docker command."
+}
+
+Make only minimal, necessary corrections.
+"""
 
 class ToolCallAgent:
     """
@@ -45,35 +71,59 @@ class ToolCallAgent:
     - 构造工具提示词
     - 调用大模型生成工具调用 JSON
     """
+    def run(
+        self,
+        query: str,
+        input_path: Path,
+        output_path: Path,
+        tools_prompt: str,
+        bug: bool = False,
+        error_msg: str = "",
+    ) -> Dict[str, Any]:
 
-    def run(self, query: str, tools_path: str, input_path: Path, result_path: Path) -> Dict[str, Any]:
-        # 1. 检索可用工具
-        retriever = ToolRetriever()
-        selected = retriever.prompt_based_retrieval(query, tools_path)
-
-        # 2. 构造工具提示词
-        tools_prompt = build_tools_prompt(selected, "tool")
-
-        # 3. 调用大模型
         client = ZhipuAiClient(api_key=os.environ.get("API_KEY"))
-        response = client.chat.completions.create(
-            model="glm-4.5",
-            temperature=0.3,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {
-                    "role": "user",
-                    "content": (
-                        f"User query: {query}\n\n"
-                        f"Available tools:\n{json.dumps(tools_prompt, indent=2)}\n\n"
-                        f"Input path: {input_path}\n"
-                        f"Result path: {result_path}"
-                    ),
-                },
-            ],
-            response_format={"type": "json_object"},
-        )
+        if not bug:
 
-        # 4. 解析 JSON
-        result = json.loads(response.choices[0].message.content)
-        return result
+            response = client.chat.completions.create(
+                model="glm-4.5",
+                temperature=0.3,
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {
+                        "role": "user",
+                        "content": (
+                            f"User query: {query}\n\n"
+                            f"Available tools:\n{json.dumps(tools_prompt, indent=2)}\n\n"
+                            f"Input path: {input_path}\n"
+                            f"Result path: {output_path}"
+                        ),
+                    },
+                ],
+                response_format={"type": "json_object"},
+            )
+
+            # 解析 JSON
+            result = json.loads(response.choices[0].message.content)
+            return result
+        else:
+                response = client.chat.completions.create(
+                    model="glm-4.5",
+                    temperature=0.3,
+                    messages=[
+                        {"role": "system", "content": DEBUG_SYSTEM_PROMPT},
+                        {
+                            "role": "user",
+                            "content": (
+                                f"User query: {query}\n\n"
+                                f"Available tools:\n{json.dumps(tools_prompt, indent=2)}\n\n"
+                                f"Input path: {input_path}\n"
+                                f"Result path: {output_path}"
+                            ),
+                        },
+                    ],
+                    response_format={"type": "json_object"},
+                )
+
+                # 4. 解析 JSON
+                result = json.loads(response.choices[0].message.content)
+                return result

@@ -61,7 +61,6 @@ class ToolRetriever:
             7. When in doubt about a tool, include it rather than exclude it.  
             8. Do NOT output any explanation—only the tool indices in the specified format.  
         """
-        print("prompt_based_retrieval:", prompt)
         client = ZhipuAiClient(api_key=os.environ.get("API_KEY"))
         response = client.chat.completions.create(
             model="glm-4.5",

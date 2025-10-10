@@ -1,0 +1,74 @@
+{
+  "tool_name": "gemma",
+  "tool_description": "Command-line version of the MedGemma Visual Question Answering system for analyzing and interpreting medical images using the Gemma 3 + SigLIP multimodal model.",
+  "tool_author": "Google Health AI Developer Foundations (CLI adaptation by local developer)",
+  "tool_version": "1.0.1",
+  "tool_entry_point": "medical_vqa_cli.py",
+  "tool_url": "https://developers.google.com/health-ai-developer-foundations/medgemma/model-card",
+  "execution_mode": "CLI",
+  "demo_commands": [
+    "# Example command-line usage",
+    "python chat_with_medgamma.py 'What abnormalities do you see in this chest X-ray?' /data/result/xray.png",
+    "python chat_with_medgamma.py 'Describe the appearance of the cardiac silhouette.' /data/result/CT_scan.dcm"
+  ],
+
+  "input_schema": {
+    "type": "object",
+    "required": ["question", "image_path"],
+    "properties": {
+      "question": {
+        "type": "string",
+        "description": "Medical question to be asked about the image."
+      },
+      "image_path": {
+        "type": "string",
+        "description": "Path to the medical image file (.jpg, .png, .dcm) to be analyzed."
+      }
+    }
+  },
+
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "question": {
+        "type": "string",
+        "description": "The question provided by the user."
+      },
+      "image_path": {
+        "type": "string",
+        "description": "Path to the medical image analyzed."
+      },
+      "answer": {
+        "type": "string",
+        "description": "Model-generated detailed answer to the question based on image content."
+      }
+    }
+  },
+
+  "example_usage": [
+    "Input: python medical_vqa_cli.py 'What findings are visible in this X-ray?' /path/to/image.png",
+    "Output:\n🩺 Question: What findings are visible in this X-ray?\n📷 Image: /path/to/image.png\n💬 Model Answer: The image shows bilateral opacities suggesting possible pulmonary edema."
+  ],
+
+  "technical_details": {
+    "architecture": "Gemma 3 with SigLIP image encoder",
+    "modality": "Vision-Language",
+    "task": "Medical Visual Question Answering (VQA)",
+    "supported_image_formats": [".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".dcm", ".nii", ".nii.gz"],
+    "max_new_tokens": 300
+  },
+
+  "limitations": [
+    "Model outputs should be verified by qualified medical professionals.",
+    "Not a substitute for professional clinical judgment.",
+    "Performance depends on image quality and question phrasing.",
+    "Not validated for direct clinical decision-making."
+  ],
+
+  "licensing_and_terms": {
+    "license": "Health AI Developer Foundations terms of use",
+    "availability": "Google Cloud Model Garden, Hugging Face",
+    "usage_terms": "For research and educational purposes only",
+    "disclaimer": "Not for clinical use or patient management decisions."
+  }
+}

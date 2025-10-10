@@ -10,17 +10,27 @@ class ToolInvoker:
     """
 
     def invoke(self, tool_call: Dict[str, Any]) -> Dict[str, Any]:
+        env_name= tool_call["tool_name"]# 获取工具对应的 conda 环境名称,conda环境名称与工具名称相同，当时配置的时候有出现几个特例
+        if env_name == "ChestXRayAnatomySegmentation":
+            env_name = "CXAS"
         command = tool_call["command"]
+        command_type = tool_call.get("command_type", "cli").lower()
 
-        # 判断调用类型
-        if command.strip().startswith("docker ") or command.strip().split()[0].isalpha():
-            # CLI 或 docker
-            return self._run_cli(command)
+        if command_type == "cli" or command_type == "docker":
+            return self._run_cli(command,env_name)
+        elif command_type == "python":
+            return self._run_python(command, env_name)
         else:
-            # Python 调用（简单判断: 包含() 且不是 shell 命令）
-            return self._run_python(command)
+            return {
+                "status": "error",
+                "stderr": f"Unknown command_type: {command_type}"
+            }
 
-    def _run_cli(self, command: str) -> Dict[str, Any]:
+    def _run_cli(self, command: str,env_name:str,timeout: int=500) -> Dict[str, Any]:
+        if env_name:
+            command=f"conda run -n {env_name} {command}"
+        else:
+            command=f"conda run -n base {command}"
         try:
             result = subprocess.run(
                 command,
@@ -34,6 +44,12 @@ class ToolInvoker:
                 "stdout": result.stdout.strip(),
                 "stderr": result.stderr.strip()
             }
+        except subprocess.TimeoutExpired as e:
+            return {
+                "status": "error",
+                "stderr": f"Command timed out after {timeout} seconds",
+                "stdout": e.stdout or "",
+            }
         except subprocess.CalledProcessError as e:
             return {
                 "status": "error",
@@ -42,16 +58,35 @@ class ToolInvoker:
                 "returncode": e.returncode
             }
 
-    def _run_python(self, code: str) -> Dict[str, Any]:
+    def _run_python(self, code: str, env_name: str = None, timeout: int = 500) -> Dict[str, Any]:
+        if env_name:
+            command = f'conda run -n {env_name} python -c "{code}"'
+        else:
+            command = f'conda run -n base python -c "{code}"'
         try:
-            local_vars = {}
-            exec(code, {}, local_vars)  # ⚠️ 注意：这里执行用户生成的代码有安全风险
+            result = subprocess.run(
+                command,
+                shell=True,
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=timeout
+            )
             return {
                 "status": "success",
-                "locals": local_vars
+                "stdout": result.stdout.strip(),
+                "stderr": result.stderr.strip()
             }
-        except Exception:
+        except subprocess.TimeoutExpired as e:
             return {
                 "status": "error",
-                "stderr": traceback.format_exc()
+                "stderr": f"Python code timed out after {timeout} seconds",
+                "stdout": e.stdout or "",
+            }
+        except subprocess.CalledProcessError as e:
+            return {
+                "status": "error",
+                "stdout": e.stdout.strip() if e.stdout else "",
+                "stderr": e.stderr.strip() if e.stderr else "",
+                "returncode": e.returncode
             }

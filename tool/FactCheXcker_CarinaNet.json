@@ -1,5 +1,5 @@
 {
-  "tool_name": "FactCheXcker CarinaNet",
+  "tool_name": "FactCheXcker_CarinaNet",
   "tool_description": "FactCheXcker CarinaNet is an AI-powered tool for automatic detection and localization of carina and endotracheal tube (ETT) positioning in chest X-rays. Part of the FactCheXcker framework designed to mitigate measurement hallucinations in radiology reports. The tool provides precise localization of ETT tips and carina with distance measurements for clinical positioning verification.",
   "tool_author": "Alice Heiman, Xiaoman Zhang, Emma Chen, Sung Eun Kim, Pranav Rajpurkar",
   "tool_version": "1.1.0",

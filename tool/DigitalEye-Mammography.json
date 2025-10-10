@@ -5,9 +5,9 @@
     "tool_version": "1.0.0",
     "tool_url": "https://github.com/cbddobvyz/digitaleye-mammography",
     "demo_commands": [
-        "# Using Docker for Digital Eye Mammography\n# Step 1: Pull the Docker image\ndocker pull cbddobvyz/digitaleye-mammography:latest\n\n# Step 2: Run the container with GPU support\ndocker run --gpus all -it \\\n    -v /path/to/your/images:/workspace/images \\\n    -v /path/to/output:/workspace/output \\\n    cbddobvyz/digitaleye-mammography:latest \\\n    python mass_inference.py \\\n    --model_enum 0 1 2 \\\n    --img_path /workspace/images \\\n    --classify_mass True \\\n    --segment_breast True \\\n    --enable_ensemble True",
-        "# Using Docker with specific model selection\ndocker run --gpus all -it \\\n    -v /path/to/your/images:/workspace/images \\\n    -v /path/to/output:/workspace/output \\\n    cbddobvyz/digitaleye-mammography:latest \\\n    python mass_inference.py \\\n    --model_enum 3 8 10 \\\n    --img_path /workspace/images \\\n    --classify_mass False",
-        "# Using Docker with custom thresholds\ndocker run --gpus all -it \\\n    -v /path/to/your/images:/workspace/images \\\n    -v /path/to/output:/workspace/output \\\n    cbddobvyz/digitaleye-mammography:latest \\\n    python mass_inference.py \\\n    --model_enum 2 4 5 7 9 \\\n    --img_path /workspace/images \\\n    --enable_ensemble \\\n    --nms_iou_threshold 0.1 \\\n    --confidence_threshold 0.33 \\\n    --ap_threshold 0.5"
+         "# Using Python for Digital Eye Mammography\n# Step 1: Navigate to the project directory and run with ensemble enabled\n(cd /path/to/digitaleye-mammography && python mass_inference.py \\\n    --model_enum 0 1 2 \\\n    --img_path ./images \\\n    --classify_mass True \\\n    --segment_breast True \\\n    --enable_ensemble True)",
+         "# Using Python with specific model selection\n(cd /path/to/digitaleye-mammography && python mass_inference.py \\\n    --model_enum 3 8 10 \\\n    --img_path ./images \\\n    --classify_mass False)",
+         "# Using Python with custom thresholds\n(cd /path/to/digitaleye-mammography && python mass_inference.py \\\n    --model_enum 2 4 5 7 9 \\\n    --img_path ./images \\\n    --enable_ensemble True \\\n    --nms_iou_threshold 0.1 \\\n    --confidence_threshold 0.33 \\\n    --ap_threshold 0.5)"
     ],
     "input_schema": {
         "type": "object",

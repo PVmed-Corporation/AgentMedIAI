@@ -1,6 +1,6 @@
 {
   "tool_name": "TotalSegmentator",
-  "tool_description": "TotalSegmentator is an open-source deep learning tool for automatic segmentation of over 100 anatomical structures in CT and MR images. It supports various tasks including organ volumetry, disease characterization, and surgical planning. The tool is available as a Python package, a 3D Slicer extension, and a web application.",
+  "tool_description": "TotalSegmentator is an open-source deep learning tool for automatic segmentation of over 100 anatomical structures in CT and MR images. It supports various tasks including organ volumetry, disease characterization, and surgical planning. ",
   "tool_author": "Jakob Wasserthal et al.",
   "tool_version": "2.2.1",
   "tool_url": "https://github.com/wasserth/TotalSegmentator",
