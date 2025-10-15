@@ -3,6 +3,10 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+*.pyc
+tools - 副本.json
+MICCAI-FLARE25-AgentToolSet-Release.xlsx
+
 # C extensions
 *.so
 
