@@ -4,6 +4,7 @@
   "tool_author": "Jakob Wasserthal et al.",
   "tool_version": "2.2.1",
   "tool_url": "https://github.com/wasserth/TotalSegmentator",
+  "command_type":"cli",
   "demo_commands": [
     "TotalSegmentator -i ct.nii.gz -o seg -ta lung_vessels --fast",
     "TotalSegmentator -i ct.nii.gz -o seg --ml --statistics --preview",

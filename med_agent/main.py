@@ -64,7 +64,7 @@ def run_subtask(task, tools_path, max_retries=4):
 
 def main():
     tools_path = "tools.json"
-    input_path = "/data/result/yilinyou/chest_X_xray.png"
+    input_path = "/data/result/zhangjie/image/ETT.jpg"
     result_path = "/data/result/yilinyou/CXAS_result/"
     query = input("请输入指令：")
     planning_agent = PlanningAgent()
@@ -98,8 +98,8 @@ def main():
     # 用 GLM4.5 总结
     client = ZhipuAiClient(api_key=os.environ.get("API_KEY"))
     response = client.chat.completions.create(
-        model="glm-4.5",
-        temperature=0.3,
+        model="glm-4.6",
+        temperature=1.0,
         messages=[
             {"role": "system", "content": "请用自然语言总结以下工具调用过程和结果。"},
             {"role": "user", "content": summary}

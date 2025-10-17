@@ -1,53 +1,43 @@
 {
   "tool_name": "gemma",
-  "tool_description": "Command-line version of the MedGemma Visual Question Answering system for analyzing and interpreting medical images using the Gemma 3 + SigLIP multimodal model.",
+  "tool_description": "Command-line version of the MedGemma Visual Question Answering system for analyzing and interpreting medical images using the Gemma 3 + SigLIP multimodal model.While Gemma is a powerful multimodal reasoning model, it should not be used for tasks requiring precise quantitative measurements (e.g., exact distances, ratios, CRT,SCD or pixel-level metrics)",
   "tool_author": "Google Health AI Developer Foundations (CLI adaptation by local developer)",
   "tool_version": "1.0.1",
-  "tool_entry_point": "medical_vqa_cli.py",
+  "tool_entry_point": "utils/chat_with_medgamma.py",
   "tool_url": "https://developers.google.com/health-ai-developer-foundations/medgemma/model-card",
-  "execution_mode": "CLI",
+  "command_type": "CLI",
+
   "demo_commands": [
-    "# Example command-line usage",
-    "python chat_with_medgamma.py 'What abnormalities do you see in this chest X-ray?' /data/result/xray.png",
-    "python chat_with_medgamma.py 'Describe the appearance of the cardiac silhouette.' /data/result/CT_scan.dcm"
+    "# --- Chest X-ray example ---",
+    "python utils/chat_with_medgamma.py 'What abnormalities do you see in this chest X-ray?' /data/xray_samples/patient001.png",
+    "# --- CT single DICOM file ---",
+    "python utils/chat_with_medgamma.py 'Describe any lung nodules or pleural effusion.' /data/ct_samples/lung_ct_slice.dcm",
+    "# --- CT DICOM folder (series) ---",
+    "python utils/chat_with_medgamma.py 'What is the condition of the liver and surrounding organs?' /data/ct_series/liver_patient_04/",
+    "# --- MRI (NIfTI format) ---",
+    "python utils/chat_with_medgamma.py 'Is there evidence of a brain tumor or abnormal lesion?' /data/mri_samples/brain_tumor_case.nii.gz",
+    "# --- Ultrasound ---",
+    "python utils/chat_with_medgamma.py 'Does the thyroid appear enlarged or contain nodules?' /data/ultrasound/thyroid_scan.jpg",
+    "# --- Digital pathology ---",
+    "python utils/chat_with_medgamma.py 'Describe the morphology and staining pattern of this biopsy sample.' /data/pathology/slide001.tiff",
+    "# --- Mammography ---",
+    "python utils/chat_with_medgamma.py 'Is there any mass or calcification visible in this mammogram?' /data/mammo/breast_exam_left.png",
+    "# --- General anatomical question ---",
+    "python utils/chat_with_medgamma.py 'Identify the visible organs in this abdominal CT image.' /data/ct_samples/abdomen_ct.dcm"
   ],
 
-  "input_schema": {
-    "type": "object",
-    "required": ["question", "image_path"],
-    "properties": {
-      "question": {
-        "type": "string",
-        "description": "Medical question to be asked about the image."
-      },
-      "image_path": {
-        "type": "string",
-        "description": "Path to the medical image file (.jpg, .png, .dcm) to be analyzed."
-      }
-    }
-  },
-
-  "output_schema": {
-    "type": "object",
-    "properties": {
-      "question": {
-        "type": "string",
-        "description": "The question provided by the user."
-      },
-      "image_path": {
-        "type": "string",
-        "description": "Path to the medical image analyzed."
-      },
-      "answer": {
-        "type": "string",
-        "description": "Model-generated detailed answer to the question based on image content."
-      }
-    }
-  },
-
   "example_usage": [
-    "Input: python medical_vqa_cli.py 'What findings are visible in this X-ray?' /path/to/image.png",
-    "Output:\n🩺 Question: What findings are visible in this X-ray?\n📷 Image: /path/to/image.png\n💬 Model Answer: The image shows bilateral opacities suggesting possible pulmonary edema."
+    "Input: python utils/chat_with_medgamma.py 'What findings are visible in this chest X-ray?' /path/to/image.png",
+    "Output:\n🩺 Question: What findings are visible in this chest X-ray?\n Image: /path/to/image.png\n Model Answer: The image shows bilateral opacities suggesting possible pulmonary edema.",
+
+    "Input: python utils/chat_with_medgamma.py 'Is there a mass in the left breast?' /data/mammo/breast_left.png",
+    "Output:\n🩺 Question: Is there a mass in the left breast?\n Image: /data/mammo/breast_left.png\n Model Answer: A focal dense region is present in the upper outer quadrant, suspicious for a small mass.",
+
+    "Input: python utils/chat_with_medgamma.py 'Describe the brain structures visible in this MRI.' /data/mri_samples/brain.nii.gz",
+    "Output:\n🩺 Question: Describe the brain structures visible in this MRI.\n Image: /data/mri_samples/brain.nii.gz\n Model Answer: The MRI slice shows symmetrical cerebral hemispheres, visible ventricles, and no apparent midline shift.",
+
+    "Input: python utils/chat_with_medgamma.py 'What is the ETT position relative to the carina?' /data/xray/ett_case.png",
+    "Output:\n🩺 Question: What is the ETT position relative to the carina?\n Image: /data/xray/ett_case.png\n Model Answer: The endotracheal tube tip lies approximately 2 cm above the carina, which is within normal limits."
   ],
 
   "technical_details": {

@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import Dict, Any
 import json
+
+from triton.language.semantic import truediv
 from zai import ZhipuAiClient
 
 
@@ -36,11 +38,14 @@ Generate a JSON output in the following schema:
    - Fill in required parameters (like input/output paths).
    - Use default values if specified.
    - Only include optional parameters if relevant.
+   - If the tool’s input schema does not include an output path parameter but the user specifies one, ignore the user-provided output path and proceed according to the correct format required by the tool invocation.
+
 4. The generated command serves only as a sub-command string and is not executed directly. At runtime,
-  -this sub-command is wrapped by the external logic into a complete executable command, 
-   such as command = f'conda run -n {env_name} bash -c "{command}"' or f"conda run -n {env_name} {command}".
-   Therefore, you only responsible for generating the core executable part ({command}), 
-   while the environment management and the conda run -n ... wrapping are automatically handled by the system during execution.
+  -This sub-command will be wrapped by the external execution logic into a complete runnable command.
+    CLI commands are wrapped as: conda run -n {env_name} bash -c "{command}"
+    Python commands are executed via _run_python(), which automatically writes the code into a temporary .py file and runs it inside the conda environment.
+    Therefore, you are only responsible for generating the core executable content ({command}) ,
+    the plain Python code (for Python type) or the raw CLI command (for CLI type), without conda run, quotes, or shell wrappers.
 5. Only output valid JSON that can be parsed with `json.loads()`.
    - Do not include any text, comments, or explanations outside of the JSON object.
 6. tools were deployed with GPU support
@@ -57,8 +62,10 @@ You will be given:
 
 ### Your task:
 Return the corrected JSON in the same schema.
+if tool provide lost of model ,you need to chose the best suitable model 
 If the error message provides usage information or indicates the expected format, you MUST modify the command strictly following that guidance. 
 Use the error details to identify and correct missing parameters, incorrect field names, or invalid syntax.
+if last tool is no suitable for this task, you can change to use another tool from the available tool list.
 
 Example:
 {
@@ -82,11 +89,14 @@ Example:
    - Fill in required parameters (like input/output paths).
    - Use default values if specified.
    - Only include optional parameters if relevant.
+   - If the tool’s input schema does not include an output path parameter but the user specifies one, ignore the user-provided output path and proceed according to the correct format required by the tool invocation.
+
 4. The generated command serves only as a sub-command string and is not executed directly. At runtime,
-  -this sub-command is wrapped by the external logic into a complete executable command, 
-   such as command = f'conda run -n {env_name} bash -c "{command}"' or f"conda run -n {env_name} {command}".
-   Therefore, you only responsible for generating the core executable part ({command}), 
-   while the environment management and the conda run -n ... wrapping are automatically handled by the system during execution.
+   -This sub-command will be wrapped by the external execution logic into a complete runnable command.
+    CLI commands are wrapped as: conda run -n {env_name} bash -c "{command}"
+    Python commands are executed via _run_python(), which automatically writes the code into a temporary .py file and runs it inside the conda environment.
+    Therefore, you are only responsible for generating the core executable content ({command}) ,
+    the plain Python code (for Python type) or the raw CLI command (for CLI type), without conda run, quotes, or shell wrappers.
 5. Only output valid JSON that can be parsed with `json.loads()`.
    - Do not include any text, comments, or explanations outside of the JSON object.
 6. tools were deployed with GPU support
@@ -113,8 +123,9 @@ class ToolCallAgent:
         if not bug:
 
             response = client.chat.completions.create(
-                model="glm-4.5",
-                temperature=0.3,
+                model="glm-4.6",
+                temperature=1,
+                thinking={"type":"enabled"},
                 messages=[
                     {"role": "system", "content": SYSTEM_PROMPT},
                     {
@@ -135,8 +146,8 @@ class ToolCallAgent:
             return result
         else:
                 response = client.chat.completions.create(
-                    model="glm-4.5",
-                    temperature=0.3,
+                    model="glm-4.6",
+                    temperature=1,
                     messages=[
                         {"role": "system", "content": DEBUG_SYSTEM_PROMPT},
                         {

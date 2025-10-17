@@ -67,10 +67,10 @@ class ToolRetriever:
         """
         client = ZhipuAiClient(api_key=os.environ.get("API_KEY"))
         response = client.chat.completions.create(
-            model="glm-4.5",
+            model="glm-4.6",
             # thinking={ "enabled": True},
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.3,
+            temperature=1,
         )
         response_content = response.choices[0].message.content
         # 3) 解析索引并基于 tools_list 回传真实对象，保证与展示一致

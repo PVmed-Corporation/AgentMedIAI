@@ -4,6 +4,7 @@
     "tool_author": "Ramazan Terzi et al.",
     "tool_version": "1.0.0",
     "tool_url": "https://github.com/cbddobvyz/digitaleye-mammography",
+    "command_type": "cli",
     "demo_commands": [
          "# Using Python for Digital Eye Mammography\n# Step 1: Navigate to the project directory and run with ensemble enabled\ncd /root/digitaleye-mammography && python mass_inference.py \\\n    --model_enum 0 1 2 \\\n    --img_path ./images \\\n    --classify_mass True \\\n    --segment_breast True \\\n    --enable_ensemble True",
          "# Using Python with specific model selection\ncd /root/digitaleye-mammography && python mass_inference.py \\\n    --model_enum 3 8 10 \\\n    --img_path ./images \\\n    --classify_mass False",

@@ -3,6 +3,8 @@ import sys
 import traceback
 from typing import Dict, Any
 import time
+import tempfile
+import os
 
 class ToolInvoker:
     """
@@ -67,17 +69,23 @@ class ToolInvoker:
             return {"status": "error", "stderr": f"Timeout after {timeout}s"}
 
     def _run_python(self, command: str, env_name: str = None, timeout: int = 500) -> Dict[str, Any]:
-        if env_name:
-            command = f'conda run -n {env_name} python -c "{command}"'
-        else:
-            command = f'conda run -n base python -c "{command}"'
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmpfile:
+            tmpfile.write(command)
+            tmpfile_path = tmpfile.name
 
-        print(f"\n[INFO] Running Python command in {env_name}:")
-        print(command)
+            #构造执行命令（不再用 python -c，防止引号/换行出错）
+        if env_name:
+            run_cmd = f'conda run -n {env_name} python {tmpfile_path}'
+        else:
+            run_cmd = f'conda run -n base python {tmpfile_path}'
+
+        print(f"\n[INFO] Running Python command in {env_name or 'base'}:")
+        print(run_cmd)
         sys.stdout.flush()
 
+        #启动子进程并实时打印输出
         process = subprocess.Popen(
-            command,
+            run_cmd,
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -109,3 +117,10 @@ class ToolInvoker:
         except subprocess.TimeoutExpired:
             process.kill()
             return {"status": "error", "stderr": f"Timeout after {timeout}s"}
+
+        finally:
+            # 自动清理临时文件
+            try:
+                os.remove(tmpfile_path)
+            except Exception:
+                pass

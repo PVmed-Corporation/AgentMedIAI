@@ -82,12 +82,13 @@ def load_medical_image(path):
 
 
 def main():
-    if len(sys.argv) != 3:
-        print("用法: medical_vqa_cli.py '<问题>' <图像路径>")
-        sys.exit(1)
-
-    question = sys.argv[1]
-    image_path = sys.argv[2]
+    if len(sys.argv) == 2:
+        question = sys.argv[1]
+        image = None
+    else:
+        question = sys.argv[1]
+        image_path = sys.argv[2]
+        image = load_medical_image(image_path)
 
     model_path = "/data/huggingface_model"
     model = AutoModelForImageTextToText.from_pretrained(
@@ -97,22 +98,34 @@ def main():
     )
     processor = AutoProcessor.from_pretrained(model_path)
 
-    # 加载图像（自动识别格式）
-    image = load_medical_image(image_path)
+    if image is None:
 
-    messages = [
-        {
-            "role": "system",
-            "content": [{"type": "text", "text": "You are an expert radiologist. Provide detailed and accurate answers to questions about medical images."}]
-        },
-        {
-            "role": "user",
-            "content": [
-                {"type": "text", "text": question},
-                {"type": "image", "image": image}
-            ]
-        }
-    ]
+        messages = [
+            {
+                "role": "system",
+                "content": [{"type": "text", "text": "You are an expert radiologist. Provide detailed and accurate answers to questions about medical images."}]
+            },
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": question}
+                ]
+            }
+        ]
+    else:
+        messages = [
+            {
+                "role": "system",
+                "content": [{"type": "text", "text": "You are an expert radiologist. Provide detailed and accurate answers to questions about medical images."}]
+            },
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": question},
+                    {"type": "image", "image": image}
+                ]
+            }
+        ]
 
     inputs = processor.apply_chat_template(
         messages,
@@ -131,7 +144,8 @@ def main():
     answer = processor.decode(generation, skip_special_tokens=True)
 
     print(f"\nquestion: {question}")
-    print(f"image_path: {image_path}")
+    if image is not None:
+        print(f"image: {image_path}")
     print(f"answer:\n{answer}\n")
 
 

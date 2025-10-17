@@ -3,17 +3,18 @@
     "tool_description": "ChestXRayAnatomySegmentation (CXAS) is a sophisticated tool for accurate fine-grained segmentation of human anatomy in chest radiographs. It uses volumetric pseudo-labeling techniques with CT projection to achieve detailed anatomical segmentation without manual annotation. The tool can segment 157 different anatomical structures and extract clinically relevant features like Cardio-Thoracic Ratio (CTR) and Spine-Center Distance (SCD).",
     "tool_author": "Constantin Marc Seibold et al.",
     "tool_version": "1.0.0",
+    "command_type": "cli",
     "tool_url": "https://github.com/ConstantinSeibold/ChestXRayAnatomySegmentation",
     "demo_commands": [
         "# Basic chest X-ray anatomy segmentation\ncxas_segment -i ../data/xray.jpg -o ../output/ -ot png -g 0",
         
-        "# Segment with multiple output formats\ncxas_segment -i ../data/xray.jpg -o ../output/ -ot dicom-seg -g cpu -m UNet_ResNet50_default",
+        "# Segment with multiple output formats\ncxas_segment -i ../data/xray.jpg -o ../output/ -ot dicom-seg -g 0 -m UNet_ResNet50_default",
         
-        "# Extract anatomical features (CTR, SCD)\ncxas_feat_extract -i ../data/xray.jpg -o ../output/ -f \"CTR\" \"SCD\" -g cpu -s",
+        "# Extract anatomical features (CTR, SCD)\ncxas_feat_extract -i ../data/xray.jpg -o ../output/ -f \"CTR\" -g 0 -s",
         
         "# Extract Cardio-Thoracic Ratio\ncxas_feat_extract -i ../data/ -o ../output/ -f \"Cardio-Thoracic Ratio\" -ot csv -g 0 -s True",
         
-        "# Comprehensive processing with segmentation and feature extraction\ncxas -i ../data/ -o ../output/ --mode extract -f \"CTR\" \"SCD\" \"Spine-Center Distance\" -ot png -g cpu -s",
+        "# Comprehensive processing with segmentation and feature extraction\ncxas -i ../data/ -o ../output/ --mode extract -f \"CTR\" \"SCD\" \"Spine-Center Distance\" -ot png -g 0 -s",
         
         "# Batch processing directory\ncxas_segment -i ../data/ -o ../output/ -ot npz -g 0"
     ],
