@@ -3,45 +3,32 @@ import os
 import json
 
 SYSTEM_PROMPT = """
-You are a task planner.
-
-Your role is to decompose a complex user request into smaller, executable sub-tasks that can be addressed using the available medical AI tools.
-
-### Output Requirements:
-- Output must be a **flat list of independent tasks** (no grouping or nesting).
-- Each task must include:
-  - "id": a unique integer identifier
-  - "sub_query": a clear, concise sub-question describing what needs to be done,if user specifies to use a specific tool or you are sure which tool to use, you must include it in sub-query.
-  - "input_path": the input data path if required, otherwise null
-  - "output_path": the output directory path if required, otherwise null
-- If the user request does not require further actions or is already fully solved, return:
-  {
-    "tasks": []
-  }
-
-### Output Format:
-You must output **valid JSON** strictly following this structure:
+You are a Medical AI Agent with long-term memory and advanced clinical reasoning capabilities.
+Your role is to understand complex medical questions or tasks, provide professional medical reasoning and explanations, or decompose them into executable sub-tasks that can be handled by medical AI tools.
+### Output Modes
+You must always respond in **valid JSON format**, strictly following one of the two modes below:
+#### Mode 1: Chat Mode
+Use this mode when the user request requires explanation, reasoning, or discussion, not tool execution.
+Format:
 {
-  "tasks": [
-    {
-      "id": 0,
-      "sub_query": "...",
-      "input_path": "...",
-      "output_path": "..."
-    },
-    {
-      "id": 1,
-      "sub_query": "...",
-      "input_path": "...",
-      "output_path": "..."
-    }
-  ]
+  "type": "chat",
+  "respond": "<your medical explanation, reasoning, or answer>"
 }
-
----
-
+#### Mode 2: Task Mode
+Use this mode when the request requires tool invocation, data analysis, or model inference.
+Format:
+{
+  "type": "task",
+  "sub_query": "a clear, concise sub-question describing what needs to be done,if user specifies to use a specific tool or you are sure which tool to use, you must include it in sub-query.",
+  "input_path": "<path to input data, e.g., /data/mri_brain_001.nii>",
+  "output_path": "<path to output result, e.g., /results/brain_tumor_report.json>"
+}
+### Additional Requirements
+1. Output must be a **strictly valid JSON object** — no text outside the JSON.
+2. Chat responses must only appear inside the `"respond"` field.
+3. Task executions must include `"sub_query"`, `"input_path"`, and `"output_path"` fields.
+4. Responses must be **professional, accurate, logically structured, and concise**.
 ### Available Medical AI Tools
-
 You have access to the following specialized medical AI tools. Each tool performs specific tasks related to medical image analysis. Select the most appropriate tools for each sub-query based on their capabilities.
 
 #### 1. DigitalEye-Mammography
@@ -99,58 +86,41 @@ A deep learning library for chest X-ray classification, segmentation, and featur
 
 
 class PlanningAgent:
-    def __init__(self):
+    def __init__(self,memory):
         self.client = ZhipuAiClient(api_key=os.environ.get("API_KEY"))
-        self.last_plan = None   # 上一次规划的结果
-        self.last_result = None # 工具返回的结果
+        self.memory = memory
+    def run(self, query: str) -> dict:
+        relevant_memories = self.memory.search(query=query, user_id="default_user",limit=3)#可以增加不同用户分开记忆
+        memories_text = "\n".join(f"- {m['memory']}" for m in relevant_memories["results"])
 
-    def run(self, query: str, input_path: str, result_path: str, tool_result: dict = None) -> dict:
-        """
-        - 第一次调用时 tool_result=None，只做任务拆解。
-        - 第二次调用时 tool_result 不为空，需要结合上次规划和工具返回结果再规划。
-        """
-        # 更新上次结果
-        if tool_result is not None:
-            self.last_result = tool_result
+        # Step 2: 构造带记忆的系统提示词
+        system_prompt_with_memory = SYSTEM_PROMPT + f"\n\n---\nRelevant past context:\n{memories_text}\n---\n"
 
-        # 构造 messages
-        messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+        messages = [
+            {"role": "system", "content": system_prompt_with_memory},
+            {"role": "user", "content": query}
+        ]
 
-        if self.last_plan is None:
-            # 第一次调用：只做任务拆解
-            messages.append({
-                "role": "user",
-                "content": (
-                    f"User query: {query}\n\n"
-                    f"Input path: {input_path}\n"
-                    f"Result path: {result_path}"
-                ),
-            })
-        else:
-            # 第二次调用：把上次的规划和工具结果传给模型
-            messages.append({
-                "role": "user",
-                "content": (
-                    f"User query: {query}\n\n"
-                    f"Previous plan: {json.dumps(self.last_plan, ensure_ascii=False, indent=2)}\n\n"
-                    f"Tool result: {json.dumps(self.last_result, ensure_ascii=False, indent=2)}\n\n"
-                    f"Input path: {input_path}\n"
-                    f"Result path: {result_path}"
-                ),
-            })
-
-        # 调用模型
+        # Step 3: 调用模型
         response = self.client.chat.completions.create(
-            model="glm-4.5",
-            temperature=0.3,
+            model="glm-4.6",
+            temperature=1,
             messages=messages,
             response_format={"type": "json_object"},
         )
 
-        # 解析 JSON
+        # Step 4: 解析 JSON 响应
         result = json.loads(response.choices[0].message.content)
+        print("INFO:show result")
+        print(result)
+        content=result.get("respond")
 
-        # 保存本次规划
-        self.last_plan = result
+        # Step 5: 把这次交互存入记忆
+        messages = [
+            {"role": "user", "content": query},
+            {"role": "assistant", "content": "content"},
+        ]
+        self.memory.add(messages,user_id="default_user")
+
 
         return result

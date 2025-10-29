@@ -1,0 +1,71 @@
+{
+  "tools": [
+    {
+      "name": "DigitalEye-Mammography",
+      "description": "A comprehensive toolkit for breast mass detection and classification in mammograms.",
+      "features": [
+        "Detects breast masses and classifies them as benign or malignant.",
+        "Supports multiple state-of-the-art detection models (ATSS, Cascade R-CNN, DETR, YOLOv3, etc.).",
+        "Performs breast segmentation preprocessing.",
+        "Supports model ensemble for enhanced accuracy.",
+        "Outputs bounding boxes, confidence scores, and classification results."
+      ]
+    },
+    {
+      "name": "FactCheXcker_CarinaNet",
+      "description": "An AI tool for carina and endotracheal tube (ETT) detection and distance measurement in chest X-rays.",
+      "features": [
+        "Automatically detects the carina and ETT tip.",
+        "Measures the distance between them (mm, cm, or pixels).",
+        "Determines if ETT placement is too high, too low, or correct.",
+        "Generates clinical reports and annotated visualizations.",
+        "Provides confidence scores and structured clinical assessments."
+      ]
+    },
+    {
+      "name": "Gemma (MedGemma CLI)",
+      "description": "A multimodal medical visual question answering (VQA) system using the Gemma 3 + SigLIP model.",
+      "features": [
+        "Automatically identifies the input image modality (X-ray, MRI, CT, ultrasound, pathology, etc.).",
+        "Analyzes and interprets medical images in response to natural-language questions.",
+        "Provides detailed and clinically plausible answers.",
+        "Supports standard formats (JPG, PNG, DICOM, NIfTI, etc.).",
+        "Useful for descriptive image interpretation, anomaly identification, and anatomical reasoning."
+      ]
+    },
+    {
+      "name": "TotalSegmentator",
+      "description": "An open-source tool for automatic segmentation of over 100 anatomical structures in CT and MR images.",
+      "features": [
+        "Performs full-body, lung-vessel, or MR-specific segmentation.",
+        "Outputs multi-label or organ-wise segmentation masks.",
+        "Supports organ volumetry, radiomics feature extraction, and statistical analysis.",
+        "Can run in fast mode for lower-resolution inference.",
+        "Commonly used for surgical planning and disease characterization."
+      ]
+    },
+    {
+      "name": "ChestXRayAnatomySegmentation (CXAS)",
+      "description": "A tool for fine-grained anatomical segmentation and feature extraction in chest radiographs.",
+      "features": [
+        "Segments up to 157 thoracic anatomical structures (heart, lungs, ribs, spine, etc.).",
+        "Extracts clinical metrics such as Cardio-Thoracic Ratio (CTR) and Spine-Center Distance (SCD).",
+        "Uses volumetric pseudo-labeling with CT projection for precision.",
+        "Operates in segmentation or feature extraction mode.",
+        "Outputs segmentation masks, CSV files, and quantitative measurements."
+      ],
+      "notes": "Can compute only one metric (either CTR or SCD) per invocation; split tasks if both are needed."
+    },
+    {
+      "name": "TorchXrayVision",
+      "description": "A deep learning library for chest X-ray classification, segmentation, and feature analysis.",
+      "features": [
+        "Provides pre-trained models trained on datasets (NIH, CheXpert, MIMIC-CXR, etc.).",
+        "Detects pathologies such as pneumonia, effusion, cardiomegaly, atelectasis, and pneumothorax.",
+        "Outputs probability-based and binary classification results.",
+        "Supports batch inference, pathology localization, and distribution shift analysis.",
+        "Useful for chest disease screening and radiology AI research."
+      ]
+    }
+  ]
+}

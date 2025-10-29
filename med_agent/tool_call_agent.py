@@ -5,7 +5,6 @@ import json
 from triton.language.semantic import truediv
 from zai import ZhipuAiClient
 
-
 import os
 
 SYSTEM_PROMPT = """
@@ -109,6 +108,8 @@ class ToolCallAgent:
     - 构造工具提示词
     - 调用大模型生成工具调用 JSON
     """
+    def __init__(self,memory):
+        self.memory = memory
     def run(
         self,
         query: str,
@@ -118,16 +119,20 @@ class ToolCallAgent:
         bug: bool = False,
         error_msg: str = "",
     ) -> Dict[str, Any]:
-
         client = ZhipuAiClient(api_key=os.environ.get("API_KEY"))
         if not bug:
+            relevant_memories = self.memory.search(query=query, user_id="default_user", limit=3)
+            memories_text = "\n".join(f"- {m['memory']}" for m in relevant_memories["results"])
+
+            # Step 2: 构造带记忆的系统提示词
+            system_prompt_with_memory = SYSTEM_PROMPT + f"\n\n---\nRelevant past context:\n{memories_text}\n---\n"
 
             response = client.chat.completions.create(
                 model="glm-4.6",
                 temperature=1,
-                thinking={"type":"enabled"},
+                thinking={"type": "enabled"},
                 messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "system", "content": system_prompt_with_memory},
                     {
                         "role": "user",
                         "content": (
@@ -144,26 +149,28 @@ class ToolCallAgent:
             # 解析 JSON
             result = json.loads(response.choices[0].message.content)
             return result
-        else:
-                response = client.chat.completions.create(
-                    model="glm-4.6",
-                    temperature=1,
-                    messages=[
-                        {"role": "system", "content": DEBUG_SYSTEM_PROMPT},
-                        {
-                            "role": "user",
-                            "content": (
-                                f"User query: {query}\n\n"
-                                f"Available tools:\n{json.dumps(tools_prompt, indent=2)}\n\n"
-                                f"error message{error_msg}\n\n"
-                                f"Input path: {input_path}\n"
-                                f"Result path: {output_path}"
-                            ),
-                        },
-                    ],
-                    response_format={"type": "json_object"},
-                )
 
-                # 4. 解析 JSON
-                result = json.loads(response.choices[0].message.content)
-                return result
+        else:
+            response = client.chat.completions.create(
+                model="glm-4.6",
+                temperature=1,
+                messages=[
+                    {"role": "system", "content": DEBUG_SYSTEM_PROMPT},
+                    {
+                        "role": "user",
+                        "content": (
+                            f"User query: {query}\n\n"
+                            f"Available tools:\n{json.dumps(tools_prompt, indent=2)}\n\n"
+                            f"error message: {error_msg}\n\n"
+                            f"Input path: {input_path}\n"
+                            f"Result path: {output_path}"
+                        ),
+                    },
+                ],
+                response_format={"type": "json_object"},
+            )
+
+            # 4. 解析 JSON
+            result = json.loads(response.choices[0].message.content)
+            return result
+
