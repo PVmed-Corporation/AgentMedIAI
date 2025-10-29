@@ -137,10 +137,10 @@ def main():
     tools_path = "tools.json"
     input_path = "/data/result/zhangjie/image/ETT.jpg"
     result_path = "/data/result/yilinyou/CXAS_result/"
-    os.environ["OPENAI_API_KEY"] = "sk-M7X461785fa09b78f3f978edecede2d7895769f1ea7sZDdG"
+    os.environ["OPENAI_API_KEY"] =
     os.environ["OPENAI_BASE_URL"] = "https://api.gptsapi.net/v1"
     os.environ["OPENAI_API_BASE"] = "https://api.gptsapi.net/v1"
-    os.environ["DEEPSEEK_API_KEY"] = "sk-f1470a8f46ad4372a536f75393d38c6f"
+    os.environ["DEEPSEEK_API_KEY"] =
     memory = create_memory()
     planning_agent = PlanningAgent(memory=memory)
     print("chat with ai(type 'exit' to quit)")
